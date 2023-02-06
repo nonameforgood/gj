@@ -1,0 +1,23 @@
+#######################################
+# Syntax Coloring Map For MetricStorage
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+MetricStorage	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+BeginNewDate	KEYWORD2
+AddPeriod	KEYWORD2
+Commit	KEYWORD2
+
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+
