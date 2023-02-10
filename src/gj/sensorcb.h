@@ -13,11 +13,11 @@ public:
 
     typedef std::function<void(DigitalSensor &sensor, uint32_t newValue)> TCallback;
 
-    void OnChange(TCallback cb);
+    void SetOnChange(TCallback cb);
 
 private:
 
     TCallback m_onChange;
     
-    void OnSensorChange(DigitalSensor &sensor);
+    void OnSensorISR(DigitalSensor &sensor);
 };

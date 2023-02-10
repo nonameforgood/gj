@@ -1,21 +1,29 @@
 #include "sensorcb.h"
+#include "sensor.h"
+#include "eventmanager.h"
 
 DigitalSensorCB::DigitalSensorCB(DigitalSensor *sensor)
 {
-    DigitalSensor::TCallback cb;
+    auto callForward = [this](DigitalSensor &sensor)
+    {
+      this->OnSensorISR(sensor);
+    };
 
-    cb = std::bind(&DigitalSensorCB::OnSensorChange, this);
-
-    sensor->OnChange(cb);
+    sensor->SetPostISRCB(callForward);
 }
 
-void DigitalSensorCB::OnSensorChange(DigitalSensor &sensor, uint32_t newValue)
+void DigitalSensorCB::SetOnChange(TCallback cb)
+{
+    m_onChange = cb;
+}
+
+void DigitalSensorCB::OnSensorISR(DigitalSensor &sensor)
 {
     if (m_onChange)
     {
         EventManager::Function func;
 
-        func = std::bind(m_onChange, sensor, newValue);
-        GJEventManager->Add(func)
+        func = std::bind(m_onChange, sensor, 0);
+        GJEventManager->Add(func);
     }
 }

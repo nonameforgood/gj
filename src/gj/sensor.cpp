@@ -115,7 +115,7 @@ void DigitalSensor::EnableInterrupts(bool enable)
   int32_t err_code = nrf_drv_gpiote_in_init(pin, &cfg, InterruptHandler);
   APP_ERROR_CHECK(err_code);
 
-  nrf_drv_gpiote_in_event_enable(pin, true);
+  nrf_drv_gpiote_in_event_enable(pin, false);
 
   int8_t remap = s_remap[pin];
 
@@ -205,9 +205,9 @@ void DigitalSensor::SetPin(uint16_t pin, int32_t pull)
 // https://github.com/espressif/arduino-esp32/issues/954
 void GJ_IRAM DigitalSensor::OnChange()
 {
-  UpdateValue();
+  const bool updated = UpdateValue();
 
-  if (m_postISR)
+  if (updated && m_postISR)
   {
     m_postISR(*this);
   }
@@ -324,8 +324,10 @@ void DigitalSensor::Update()
   }
 }
 
-void GJ_IRAM DigitalSensor::UpdateValue()
+bool GJ_IRAM DigitalSensor::UpdateValue()
 {
+  bool updated = false;
+
   uint32_t current = ReadPin( GetPin() );
   
   //printf("DigitalSensor::UpdateValue current=%d\n\r", current);
@@ -358,8 +360,12 @@ void GJ_IRAM DigitalSensor::UpdateValue()
       
       m_value = current;
       m_lastChange = m;
+
+      updated = true;
     }
   }
+
+  return updated;
 }
 
 void DigitalSensor::OnChangeConst(ConstCallback cb)

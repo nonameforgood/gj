@@ -89,7 +89,7 @@ private:
 
   TPostISRCallback m_postISR;
 
-  void GJ_IRAM UpdateValue();
+  bool GJ_IRAM UpdateValue();
   void GJ_IRAM OnChange();
 #ifdef ESP32
   static void GJ_IRAM InterruptHandler(void *param);
