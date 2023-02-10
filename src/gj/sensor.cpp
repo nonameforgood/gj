@@ -207,15 +207,10 @@ void GJ_IRAM DigitalSensor::OnChange()
 {
   UpdateValue();
 
-  if (GJEventManager)
+  if (m_postISR)
   {
-    EventManager::Function func;
-
-    func = std::bind(&DigitalSensor::Update, this);
-
-    GJEventManager->Add(func);
+    m_postISR(*this);
   }
-
 }
 
 #ifdef ESP32
@@ -379,6 +374,11 @@ void DigitalSensor::OnChange(TCallback cb)
 void DigitalSensor::OnFall(ConstCallback cb)
 {
   m_onFall = cb;
+}
+
+void DigitalSensor::SetPostISRCB(TPostISRCallback cb)
+{
+  m_postISR = cb;
 }
 
 AutoToggleSensor::AutoToggleSensor(U16 refresh)

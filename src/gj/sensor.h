@@ -63,6 +63,9 @@ public:
   void OnChange(TCallback cb);
   void OnFall(ConstCallback cb);
   
+  typedef std::function<void(DigitalSensor &sensor)> TPostISRCallback;
+
+  void SetPostISRCB(TPostISRCallback cb);
 private:
   uint16_t const m_refresh;
   uint32_t m_lastChange = 0;
@@ -83,6 +86,8 @@ private:
   ConstCallback m_onConstChange;
   TCallback m_onChange;
   ConstCallback m_onFall;
+
+  TPostISRCallback m_postISR;
 
   void GJ_IRAM UpdateValue();
   void GJ_IRAM OnChange();
