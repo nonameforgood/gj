@@ -63,6 +63,9 @@ public:
   void OnChange(TCallback cb);
   void OnFall(ConstCallback cb);
   
+  typedef std::function<void(DigitalSensor &sensor)> TPostISRCallback;
+
+  void SetPostISRCB(TPostISRCallback cb);
 private:
   uint16_t const m_refresh;
   uint32_t m_lastChange = 0;
@@ -84,7 +87,9 @@ private:
   TCallback m_onChange;
   ConstCallback m_onFall;
 
-  void GJ_IRAM UpdateValue();
+  TPostISRCallback m_postISR;
+
+  bool GJ_IRAM UpdateValue();
   void GJ_IRAM OnChange();
 #ifdef ESP32
   static void GJ_IRAM InterruptHandler(void *param);
