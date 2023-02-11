@@ -18,7 +18,7 @@ typedef struct {
 
 #define ULP_BINARY_MAGIC_ESP32 (0x00706c75)
 
-esp_err_t ulptool_load_binary(uint32_t load_addr, const uint8_t* program_binary, size_t program_size) {
+esp_err_t ulptool_load_binary_gj(uint32_t load_addr, const uint8_t* program_binary, size_t program_size) {
   size_t program_size_bytes = program_size * sizeof(uint32_t);
   size_t load_addr_bytes = load_addr * sizeof(uint32_t);
 

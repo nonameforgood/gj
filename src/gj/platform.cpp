@@ -15,7 +15,7 @@ void SetupPinEx(uint32_t pin, bool input, int32_t pull, bool highDrive)
 {
   if (input)
   {
-    int32_t pullMode = INPUT_NOPULL;
+    int32_t pullMode = 0;
     if (pull < 0)
       pullMode = INPUT_PULLDOWN;
     else if (pull > 0)
@@ -28,7 +28,7 @@ void SetupPinEx(uint32_t pin, bool input, int32_t pull, bool highDrive)
 
 void SetupPin(uint32_t pin, bool input, int32_t pull)
 {
-  SetupPinEx(pin, input, pull);
+  SetupPinEx(pin, input, pull, false);
 }
 
 bool ForceLinkSymbol(const void*ptr)

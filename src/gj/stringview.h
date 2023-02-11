@@ -5,6 +5,8 @@
 #endif
 
 #if defined(USE_GJ_STRING_VIEW)
+  #include "base.h"
+
   class StringView
   {
     public:

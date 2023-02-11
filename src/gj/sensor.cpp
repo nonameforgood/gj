@@ -10,6 +10,7 @@
   #include <driver/rtc_io.h>
   #include <driver/adc.h>
   #include <esp_adc_cal.h>
+  #include <esp32-hal-gpio.h>
 #elif defined(NRF)
   #include <nrf_gpio.h>
   #include <nrf_gpiote.h>
@@ -32,7 +33,6 @@ bool Sensor::IsFlagSet(Flags flags) const
 {
   return (m_flags & flags) != Flags::None;
 }
-
 #if defined(NRF)
 
 static nrf_drv_timer_t timer = NRF_DRV_TIMER_INSTANCE(1);
@@ -291,7 +291,7 @@ void DigitalSensor::Update()
   {
     uint32_t ulpCount = 0;
     
-    uint32_t const rtcGPIO = rtc_gpio_desc[GetPin()].rtc_num;
+    uint32_t const rtcGPIO = digitalPinToRtcPin((gpio_num_t)GetPin());
     
     uint32_t const changeEvents = ulp_sensor_events ? (*ulp_sensor_events)[rtcGPIO * UlpCount_Count + UlpCount_Change] : 0;
     uint32_t const riseEvents =   ulp_sensor_events ? (*ulp_sensor_events)[rtcGPIO * UlpCount_Count + UlpCount_Rise] : 0;

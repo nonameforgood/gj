@@ -14,7 +14,7 @@
 
 #define WS_LOG_ON_ERR(r, ...) if (r < 0) {LOG(__VA_ARGS__);}
 
-void SendRecentLog(tl::function_ref<void(const char *)> cb);
+void SendRecentLog(std::function<void(const char *)> cb);
 
 class GJWebSocketServer::WSClient : public GJWifiClient
 {
@@ -373,6 +373,9 @@ bool GJWebSocketServer::Broadcast(const char *text)
 void GJWebSocketServer::Update()
 {
   if (!IsWifiAPEnabled() && !IsWifiSTAEnabled())
+    return;
+
+  if (!m_init)
     return;
 
   SetDebugLoc("WSS accept");
