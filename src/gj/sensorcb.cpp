@@ -21,9 +21,14 @@ void DigitalSensorCB::OnSensorISR(DigitalSensor &sensor)
 {
     if (m_onChange)
     {
-        EventManager::Function func;
+        //EventManager::Function func;
 
-        func = std::bind(m_onChange, sensor, 0);
-        GJEventManager->Add(func);
+        auto callUserFunc = [&, this]()
+        {
+            m_onChange(sensor, 0);
+        };
+
+        //func = std::bind(m_onChange, sensor, 0);
+        GJEventManager->Add(callUserFunc);
     }
 }
