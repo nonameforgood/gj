@@ -17,18 +17,15 @@ void DigitalSensorCB::SetOnChange(TCallback cb)
     m_onChange = cb;
 }
 
-void DigitalSensorCB::OnSensorISR(DigitalSensor &sensor)
+GJ_IRAM void DigitalSensorCB::OnSensorISR(DigitalSensor &sensor)
 {
     if (m_onChange)
     {
-        //EventManager::Function func;
-
         auto callUserFunc = [&, this]()
         {
             m_onChange(sensor, 0);
         };
 
-        //func = std::bind(m_onChange, sensor, 0);
         GJEventManager->Add(callUserFunc);
     }
 }

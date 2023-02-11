@@ -207,8 +207,10 @@ void GJ_IRAM DigitalSensor::OnChange()
 {
   const bool updated = UpdateValue();
 
+  //printf("ISR\n\r");
   if (updated && m_postISR)
   {
+    //printf("post ISR\n\r");
     m_postISR(*this);
   }
 }

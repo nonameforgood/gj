@@ -13,8 +13,8 @@ public:
     RingBuffer(uint32_t count = 16);
     ~RingBuffer();
     
-    bool Add(T const &element);
-    bool Remove(T &item, uint32_t timeout = 0);
+    GJ_IRAM bool Add(T const &element);
+    GJ_IRAM bool Remove(T &item, uint32_t timeout = 0);
 
 private:
 

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "base.h"
+#include "platform.h"
 #include <functional>
 
 class DigitalSensor;
@@ -19,5 +21,5 @@ private:
 
     TCallback m_onChange;
     
-    void OnSensorISR(DigitalSensor &sensor);
+    GJ_IRAM void OnSensorISR(DigitalSensor &sensor);
 };

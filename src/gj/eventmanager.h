@@ -18,8 +18,8 @@ public:
 
     typedef std::function<void()> Function;
 
-    void Add(Function const &func);
-    void DelayAdd(Function const &func, uint64_t delayUS);
+    GJ_IRAM void Add(Function const &func);
+    GJ_IRAM void DelayAdd(Function const &func, uint64_t delayUS);
     void WaitForEvents(uint32_t timeout = 0);
     bool IsIdle() const;
 
@@ -52,7 +52,7 @@ private:
 
     GJTimer *m_timer = nullptr;
 
-    void AddEvent(Event *e);
+    GJ_IRAM void AddEvent(Event *e);
     bool HandleEvent(Event *e);
     void SetNextTimer();
     void TimerCallback();
