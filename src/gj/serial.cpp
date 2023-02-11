@@ -127,8 +127,9 @@ struct SerialInfo
   char m_buffer[BufferSize];
 };
 
-thread_local SerialInfo *g_serialInfo = nullptr;
-
+//thread_local
+//thread_local crashes the ESP32
+SerialInfo *g_serialInfo = nullptr;
 
 TerminalHandler g_terminalHandlers[MaxTerminalHandlers];
 TerminalReadyHandler g_terminalReadyHandlers[MaxTerminalHandlers];

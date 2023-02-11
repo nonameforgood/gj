@@ -27,7 +27,7 @@ DEFINE_CONFIG_INT32(ble.dbglvl, ble_dbglvl, 1); //default level 1(error)
 
 #define BS_LOG_ON_ERR(r, ...) if (r < 0) {LOG(__VA_ARGS__);}
 
-void SendRecentLog(tl::function_ref<void(const char *)> cb);
+void SendRecentLog(std::function<void(const char *)> cb);
 
 #define BLE_SER(lvl, ...) { if ( GJ_CONF_INT32_VALUE(ble.dbglvl) >= lvl) printf(__VA_ARGS__); }
 

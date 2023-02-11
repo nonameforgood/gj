@@ -80,7 +80,7 @@ bool HttpGet(const char *get, String &response)
 
 
 
-bool HttpPost(const char *uri, const char *data, uint32_t dataSize, String &response)
+bool HttpPost(const char *uri, const char *data, uint32_t dataSize, GJString &response)
 {
   return false;
 #if 0

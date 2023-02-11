@@ -1,6 +1,9 @@
 #include "stringview.h"
 
 #if defined(USE_GJ_STRING_VIEW)
+
+#include <cstring>
+
 StringView::StringView()
 : m_str(nullptr)
 , m_len(0)

@@ -13,10 +13,15 @@
 #include "commands.h"
 #include <esp32/ulp.h>
 #include <esp_wifi.h>
-#include <ulptool.h>
+//#include <ulptool.h>
 #include <driver/adc.h>
 #include <esp_bt.h>
 #include <soc/rtc_cntl_reg.h>
+
+extern "C"
+{
+esp_err_t ulptool_load_binary(uint32_t load_addr, const uint8_t* program_binary, size_t program_size);
+}
 
 SleepManager *SleepManager::ms_instance = nullptr;
 
@@ -243,7 +248,7 @@ void SleepManager::EnterDeepSleep()
 
   //printf("bef adc_power_off\n");
 
-  adc_power_release();
+  //adc_power_release();
   //adc_power_off();
 
   //printf("aft adc_power_off\n");
