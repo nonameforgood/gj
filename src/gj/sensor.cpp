@@ -169,29 +169,13 @@ void DigitalSensor::SetPin(uint16_t pin, int32_t pull)
 {
   Sensor::SetPin(pin);
 
-#ifdef ESP32
-  gpio_num_t gpio = (gpio_num_t)pin; 
-  pinMode(GetPin(), INPUT_PULLDOWN);   //pull down important so that sensor can be detected reliably
-  esp_err_t ret;
-  ret = gpio_pulldown_en(gpio);
-  LOG_ON_ERROR(ret, "gpio_pulldown_en:%s\n\r", esp_err_to_name(ret));
-
-  //using rtc pulldown because on some pins, GPIO pull down is not working because of a silicon bug
-  ret = rtc_gpio_init(gpio);
-  LOG_ON_ERROR(ret, "rtc_gpio_init:%s\n\r", esp_err_to_name(ret));
-  ret = rtc_gpio_set_direction(gpio, RTC_GPIO_MODE_INPUT_ONLY);
-  LOG_ON_ERROR(ret, "rtc_gpio_set_direction:%s\n\r", esp_err_to_name(ret));
-  ret = rtc_gpio_pullup_dis(gpio);
-  LOG_ON_ERROR(ret, "rtc_gpio_pullup_dis:%s\n\r", esp_err_to_name(ret));
-  ret = rtc_gpio_pulldown_en(gpio);
-  LOG_ON_ERROR(ret, "rtc_gpio_pulldown_en:%s\n\r", esp_err_to_name(ret));  //pull down important so that sensor can be detected reliably
-  
-  UpdateValue();
-  attachInterruptArg(digitalPinToInterrupt(pin), InterruptHandler, this, CHANGE);
-#elif defined(NRF)
   m_pull = pull;
   SetupPin(pin, true, pull);
 
+#ifdef ESP32
+  UpdateValue();
+  attachInterruptArg(digitalPinToInterrupt(pin), InterruptHandler, this, CHANGE);
+#elif defined(NRF)
   if (m_enableInterrupts)
   {
     EnableInterrupts(false);

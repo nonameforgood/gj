@@ -1,5 +1,7 @@
 #if defined(ESP32)
 #include "base.h"
+#include <driver/rtc_io.h>
+#include <esp32-hal-gpio.h>
 
 uint32_t ReadPin(uint16_t pin)
 {
@@ -21,6 +23,34 @@ void SetupPinEx(uint32_t pin, bool input, int32_t pull, bool highDrive)
     else if (pull > 0)
       pullMode = INPUT_PULLUP;
     pinMode(pin, pullMode);   //pull down important so that sensor can be detected reliably
+
+    gpio_num_t gpio = (gpio_num_t)pin; 
+    const int32_t rtcPin = digitalPinToRtcPin(gpio);
+    if (rtcPin != -1)
+    {
+      esp_err_t ret;
+
+      //using rtc pull because on some pins, GPIO pull is not working because of a silicon bug
+      ret = rtc_gpio_init(gpio);
+      LOG_ON_ERROR(ret, "rtc_gpio_init:%s\n\r", esp_err_to_name(ret));
+      ret = rtc_gpio_set_direction(gpio, RTC_GPIO_MODE_INPUT_ONLY);
+      LOG_ON_ERROR(ret, "rtc_gpio_set_direction:%s\n\r", esp_err_to_name(ret));
+
+      if (pull < 0)
+      {
+        ret = rtc_gpio_pullup_dis(gpio);
+        LOG_ON_ERROR(ret, "rtc_gpio_pullup_dis:%s\n\r", esp_err_to_name(ret));
+        ret = rtc_gpio_pulldown_en(gpio);
+        LOG_ON_ERROR(ret, "rtc_gpio_pulldown_en:%s\n\r", esp_err_to_name(ret));
+      }
+      else if (pull > 0)
+      {
+        ret = rtc_gpio_pulldown_dis(gpio);
+        LOG_ON_ERROR(ret, "rtc_gpio_pullup_dis:%s\n\r", esp_err_to_name(ret));
+        ret = rtc_gpio_pullup_en(gpio);
+        LOG_ON_ERROR(ret, "rtc_gpio_pulldown_en:%s\n\r", esp_err_to_name(ret));
+      }
+    }
   }
   else
     pinMode(pin, OUTPUT);   //pull down important so that sensor can be detected reliably
