@@ -7,11 +7,11 @@
     #define TEST_PIN_A 23
     #define TEST_PIN_B 18
 #elif defined(NRF51)
-    #define TEST_PIN_A 23
-    #define TEST_PIN_B 18
+    #define TEST_PIN_A 11
+    #define TEST_PIN_B 12
 #elif defined(NRF52)
-    #define TEST_PIN_A 23
-    #define TEST_PIN_B 18
+    #define TEST_PIN_A 16
+    #define TEST_PIN_B 17
 #endif
 
 static int32_t s_testPinEventCount = 0;
@@ -31,6 +31,7 @@ void TestPins()
     DigitalSensor pinA;
     pinA.SetPin(TEST_PIN_A, pullDown);
     pinA.SetPostISRCB(OnTestPinA);
+    pinA.EnableInterrupts(true);
 
     bool testPinBOutput = false;
     SetupPin(TEST_PIN_B, testPinBOutput, 0);

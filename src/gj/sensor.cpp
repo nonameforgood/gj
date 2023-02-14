@@ -82,6 +82,11 @@ DigitalSensor::DigitalSensor(uint16_t refresh)
 {
 
 }
+DigitalSensor::~DigitalSensor()
+{
+  EnableInterrupts(false);
+}
+
 /*
 void DigitalSensor::SetInteruptHandler(PfnInterruptHandler handler)
 {
