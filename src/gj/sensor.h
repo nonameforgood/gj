@@ -49,7 +49,8 @@ class DigitalSensor : public Sensor
 {
 public:
   DigitalSensor(U16 refresh = 10);
-
+  ~DigitalSensor();
+  
   void SetPin(uint16_t pin, int32_t pull = -1);
   virtual void Update();
   virtual uint32_t GetValue() const { return m_value; }
