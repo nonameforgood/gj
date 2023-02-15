@@ -450,9 +450,9 @@ void InitializeDateTime(OnlineDateUpdater updateFunc)
       LOG("/lastdate not read\n\r");
     }
 
-#if defined(ESP32)
     if (unixtime == 0)
     {
+#if defined(ESP32)
       std::tm tm = {};
 
       strptime(__DATE__, "%b %d %Y", &tm);
@@ -460,8 +460,14 @@ void InitializeDateTime(OnlineDateUpdater updateFunc)
       unixtime = (int32_t)epo;
 
       LOG("Init unixtime to %d from build date '%s'", unixtime, __DATE__);
-    }
+#else
+      //use some arbitrary unixtime
+      unixtime = (int32_t)1676387543; //(2023-02-14T11:12:23) 
+
+      SER("Init unixtime to %d '%s'", unixtime, "(2023-02-14T11:12:23)");
 #endif
+    }
+
     unixtime += GetElapsedMillis() / 1000;  //add elapsed time since boot
   }
 
