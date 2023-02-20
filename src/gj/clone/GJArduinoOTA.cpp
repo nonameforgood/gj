@@ -8,7 +8,7 @@
 #include "MD5Builder.h"
 #include "Update.h"
 
-#include "gj/base.h"
+#include "../base.h"
 
 // #define OTA_DEBUG Serial
 

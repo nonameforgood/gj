@@ -1,5 +1,5 @@
-#include <gj/base.h>
-#include <gj/sensor.h>
+#include "../base.h"
+#include "../sensor.h"
 
 //must connect TEST_PIN_A to TEST_PIN_B
 

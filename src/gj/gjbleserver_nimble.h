@@ -6,8 +6,8 @@
 
 #ifdef GJ_NIMBLE
 
-#include <gj/vector.h>
-#include <gj/string.h>
+#include "vector.h"
+#include "string.h"
 
 //#include <nimble/ble.h>
 #include <NimBLEDevice.h>

@@ -9,9 +9,9 @@
 #include "esputils.h"
 #include "file.h"
 #include "commands.h"
-#include "gj/config.h"
-#include "gj/eventmanager.h"
-#include "gj/appendonlyfile.h"
+#include "config.h"
+#include "eventmanager.h"
+#include "appendonlyfile.h"
 
 #ifdef ESP32
   #include <soc/rtc.h>

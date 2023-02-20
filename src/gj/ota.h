@@ -2,7 +2,7 @@
 
 void UpdateOTA();
 
-#include "gj/clone/GJArduinoOTA.h"
+#include "clone/GJArduinoOTA.h"
 #include "base.h"
 #include "datetime.h"
 

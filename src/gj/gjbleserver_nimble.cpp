@@ -2,14 +2,14 @@
 
 #ifdef GJ_NIMBLE
 
-#include "gj/esputils.h"
-#include "gj/serial.h"
+#include "esputils.h"
+#include "serial.h"
 
-#include "gj/commands.h"
-#include "gj/config.h"
-#include "gj/eventmanager.h"
-#include "gj/datetime.h"
-#include "gj/gjota.h"
+#include "commands.h"
+#include "config.h"
+#include "eventmanager.h"
+#include "datetime.h"
+#include "gjota.h"
 
 #include "esp_log.h"
 #include "nvs_flash.h"
