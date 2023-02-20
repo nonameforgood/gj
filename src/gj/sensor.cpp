@@ -482,12 +482,17 @@ bool GetADCChannel(uint32_t gpio, bool &isAdc1, uint32_t &channel)
   }
   return true;
 }
+#elif defined(NRF)
+AnalogSensor* AnalogSensor::ms_currentSensor = nullptr;
 #endif
 
 AnalogSensor::AnalogSensor(uint32_t reads)
 : m_reads(reads)
 {
-
+#if defined(NRF)
+  Adc::CreateInstance();
+  Adc::GetInstance()->Init(&AnalogSensor::DriverCallback);
+#endif
 }
 
 void AnalogSensor::SetPin(uint16_t pin)
@@ -525,6 +530,8 @@ void AnalogSensor::SetPin(uint16_t pin)
   ret = rtc_gpio_pulldown_en(gpio);
   LOG_ON_ERROR(ret, "rtc_gpio_pulldown_en:%s\n\r", esp_err_to_name(ret));  //pull down important so that sensor can be detected reliably
   */
+#elif defined(NRF)
+
 #endif
 
   Update();
@@ -564,21 +571,21 @@ uint32_t AnalogSensor::GetValue() const
     return pin;
   };
 
-  //readPin();
-  //delay(10);
-
   for (int i = 0 ; i < m_reads ; ++i)
   {
     value += readPin();
-    //delay(5);
   }
+
+  value = value / m_reads + m_offset;
+#else
+  value = m_value;
 #endif
-  return value / m_reads + m_offset;
+  
+  return value;
 }
 
 uint32_t AnalogSensor::GetDetailedRawValue(uint32_t *userMin, uint32_t *userMax) const
 {
-  
   uint32_t value = 0;
   uint32_t min = 0xffffffff;
   uint32_t max = 0;
@@ -601,6 +608,60 @@ uint32_t AnalogSensor::GetDetailedRawValue(uint32_t *userMin, uint32_t *userMax)
 void AnalogSensor::SetOffset(uint32_t offset)
 {
   m_offset = offset;
+}
+
+void AnalogSensor::Sample()
+{
+#if defined(NRF)
+  //GJ_ASSERT(ms_currentSensor == nullptr, "Another AnalogSensor is already sampling");
+
+  m_ready = false;
+  ms_currentSensor = this;
+  Adc::GetInstance()->StartSampling(GetPin(), m_reads);
+#endif
+}
+
+void AnalogSensor::SetOnReady(Function func)
+{
+#if defined(NRF)
+  m_onReady = func;
+#endif
+}
+
+bool AnalogSensor::IsReady() const
+{
+#if defined(ESP32)
+  return true;
+#elif defined(NRF)
+  return m_ready;
+#endif
+}
+
+void AnalogSensor::DriverCallback(const Adc::FinishInfo &info)
+{
+#if defined(ESP32)
+
+#elif defined(NRF)
+  int32_t value = 0;
+
+  for (int i = 0; i < info.m_sampleCount; i++)
+  {
+    int32_t subValue = info.m_values[i] * 100 / info.m_divider;
+    value += subValue;
+  }
+
+  AnalogSensor &sensor = *ms_currentSensor;
+  ms_currentSensor = nullptr;
+
+  sensor.m_value = value / info.m_sampleCount;
+  sensor.m_ready = true;
+
+  if (sensor.m_onReady)
+  {
+    //don't go through GJEventManager, AnalogSensor::DriverCallback is already called from it.
+    sensor.m_onReady(sensor);
+  }
+#endif
 }
 
 #define DEFAULT_VREF    1100        //Use adc2_vref_to_gpio() to obtain a better estimate
