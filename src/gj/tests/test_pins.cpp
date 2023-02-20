@@ -1,5 +1,6 @@
 #include "../base.h"
 #include "../sensor.h"
+#include "../eventmanager.h"
 
 //must connect TEST_PIN_A to TEST_PIN_B
 
@@ -23,7 +24,7 @@ GJ_IRAM void OnTestPinA(DigitalSensor &sensor)
 
 #define TEST_CASE(name, cond) SER("Test '%s': %s %s:%d\n\r",(cond) ? "SUCCEEDED" : "   FAILED", name, __FILE__, __LINE__)
 
-void TestPins()
+void TestInputPins()
 {
     int32_t pullDown = -1;
     int32_t pullUp = 1;
@@ -70,4 +71,42 @@ void TestPins()
     Delay(100);
     TEST_CASE("Pin Input Pull up, HIGH, LOW, HIGH", s_testPinEventCount == 3);
     s_testPinEventCount = 0;
+}
+
+static bool OnVDDSensorCalled = false;
+static void OnVDDSensorReady(AnalogSensor &sensor)
+{
+  OnVDDSensorCalled = true;
+}
+
+void TestVDDAdc()
+{
+  AnalogSensor sensor(10);
+
+  sensor.SetPin(0);
+  sensor.SetOnReady(OnVDDSensorReady);
+  sensor.Sample();
+  
+  const uint32_t begin = GetElapsedMillis();
+  while(!sensor.IsReady())
+  {
+    GJEventManager->WaitForEvents(0);
+
+    Delay(5);
+
+    const uint32_t end = GetElapsedMillis();
+
+    if ((end - begin) > 500)
+      break;
+  }
+
+  TEST_CASE("VDD Sensor CB called", OnVDDSensorCalled);
+  TEST_CASE("VDD Sensor value >= 250", sensor.GetValue() >= 250);
+}
+
+
+void TestPins()
+{
+  TestInputPins();
+  TestVDDAdc();
 }
