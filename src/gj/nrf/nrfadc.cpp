@@ -11,11 +11,9 @@ Adc* Adc::ms_instance = nullptr;
 
 Adc::Adc()
 {
-  //ms_instance = this;
 } 
 Adc::~Adc()
 {
-  //ms_instance = nullptr;
 } 
 
 void Adc::CreateInstance()
@@ -101,6 +99,7 @@ void Adc::StartSampling(uint32_t analogInput, uint32_t sampleCount)
   }
 #endif
 
+  //TimerCallback will start the sampling process
   m_eventIndex = 0;
   GJEventManager->DelayAdd(TimerCallback, 500);
 }

@@ -643,11 +643,10 @@ bool AnalogSensor::IsReady() const
 #endif
 }
 
+#if defined(NRF)
 void AnalogSensor::DriverCallback(const Adc::FinishInfo &info)
 {
-#if defined(ESP32)
 
-#elif defined(NRF)
   int32_t value = 0;
 
   for (int i = 0; i < info.m_sampleCount; i++)
@@ -667,8 +666,9 @@ void AnalogSensor::DriverCallback(const Adc::FinishInfo &info)
     //don't go through GJEventManager, AnalogSensor::DriverCallback is already called from it.
     sensor.m_onReady(sensor);
   }
-#endif
+
 }
+#endif
 
 #define DEFAULT_VREF    1100        //Use adc2_vref_to_gpio() to obtain a better estimate
 VoltageSensor::VoltageSensor()

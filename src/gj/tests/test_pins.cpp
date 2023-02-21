@@ -7,6 +7,9 @@
 #if defined(ESP32)
     #define TEST_PIN_A 23
     #define TEST_PIN_B 18
+
+    #define TEST_PIN_C 23
+    #define TEST_PIN_D 18
 #elif defined(NRF51)
     #define TEST_PIN_A 11
     #define TEST_PIN_B 12
