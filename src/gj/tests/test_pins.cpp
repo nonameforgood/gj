@@ -83,7 +83,7 @@ void TestVDDAdc()
 {
   AnalogSensor sensor(10);
 
-  sensor.SetPin(0);
+  sensor.SetPin(GJ_ADC_VDD);
   sensor.SetOnReady(OnVDDSensorReady);
   sensor.Sample();
   

@@ -95,7 +95,7 @@ void Adc::StartSampling(uint32_t analogInput, uint32_t sampleCount)
 
   ret_code_t err_code;
   nrf_saadc_channel_config_t channel_config =
-      NRF_DRV_SAADC_DEFAULT_CHANNEL_CONFIG_SE((nrf_saadc_input_t)(analogInput + 1));
+      NRF_DRV_SAADC_DEFAULT_CHANNEL_CONFIG_SE((nrf_saadc_input_t)(analogInput));
   err_code = nrf_drv_saadc_channel_init(0, &channel_config);
   APP_ERROR_CHECK(err_code);
   }
@@ -129,6 +129,10 @@ void Adc::TimerCallback()
     nrf_drv_saadc_sample();
     ++ms_instance->m_eventIndex;
   }
+  else
+  {
+    printf("busy\n\r");
+  }
 #endif
 
   if (ms_instance->m_eventIndex < ms_instance->m_sampleCount)
@@ -146,17 +150,15 @@ void Adc::DriverCallback(ArgType const * p_event)
 
 void Adc::CallUserCallback()
 {
+  int32_t resolution = 1024;
+  int32_t gain;
+  int32_t ref;
+
+  int16_t *buffer = ms_instance->m_buffer;
+  uint32_t sampleCount = ms_instance->m_sampleCount;
+
 #if NRF_MODULE_ENABLED(ADC)
   nrf_drv_adc_channel_disable(&ms_instance->m_channel_config);
-#elif NRF_MODULE_ENABLED(SAADC)
-  ret_code_t err_code;
-  err_code = nrf_drv_saadc_channel_uninit(0);
-  APP_ERROR_CHECK(err_code);
-#endif
-
-  int32_t resolution = 1024;
-  int32_t gain = 3;
-  int32_t ref = 120; //VBG Ref (1.2V) * 100
 
   if (ms_instance->m_channel_config.config.config.resolution == NRF_ADC_CONFIG_RES_8BIT)
     resolution = 256;
@@ -165,9 +167,25 @@ void Adc::CallUserCallback()
   else
     resolution = 1024;
 
+  gain = 3;
+  ref = 120; //VBG Ref (1.2V) * 100
+
+#elif NRF_MODULE_ENABLED(SAADC)
+  ret_code_t err_code;
+  err_code = nrf_drv_saadc_channel_uninit(0);
+  APP_ERROR_CHECK(err_code);
+
+  gain = 6;
+  ref = 60;
+
+  //the last sample value is the closest one to the real value
+  buffer = ms_instance->m_buffer + ms_instance->m_sampleCount - 1;
+  sampleCount = 1;
+#endif
+
   int32_t divider = resolution * 100 / (gain * ref);
 
-  FinishInfo info = {ms_instance->m_buffer, ms_instance->m_sampleCount, (int16_t)divider};
+  FinishInfo info = {buffer, sampleCount, (int16_t)divider};
 
   ms_instance->m_callback(info);
 }
