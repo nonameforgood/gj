@@ -5,11 +5,11 @@
 #if defined(NRF51)
     #include "nrf_drv_adc.h"
 
-    #define GJ_ADC_VDD 0      //ADC_CONFIG_PSEL_Disabled
+    #define GJ_ADC_CHANNEL_VDD 0      //ADC_CONFIG_PSEL_Disabled
 #elif NRF_MODULE_ENABLED(SAADC)
     #include "nrf_drv_saadc.h"
 
-    #define GJ_ADC_VDD 9      //SAADC_CH_PSELP_PSELP_VDD
+    #define GJ_ADC_CHANNEL_VDD 9      //SAADC_CH_PSELP_PSELP_VDD
 #endif
 
 class Adc
@@ -31,6 +31,8 @@ public:
 
   static void CreateInstance();
   static Adc* GetInstance();
+
+  static uint16_t GetPinChannel(uint32_t pin);
 
 private:
   uint32_t m_sampleCount = 0;

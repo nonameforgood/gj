@@ -123,6 +123,8 @@ private:
   static void OnDigitalChange(DigitalSensor &sensor, uint32_t count);
 };
 
+#define GJ_ADC_VDD_PIN 255
+
 class AnalogSensor : public Sensor
 {
 public:

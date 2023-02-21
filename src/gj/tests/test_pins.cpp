@@ -10,9 +10,15 @@
 #elif defined(NRF51)
     #define TEST_PIN_A 11
     #define TEST_PIN_B 12
+
+    #define TEST_PIN_C 1
+    #define TEST_PIN_D 25
 #elif defined(NRF52)
     #define TEST_PIN_A 16
     #define TEST_PIN_B 17
+
+    #define TEST_PIN_C 4
+    #define TEST_PIN_D 29
 #endif
 
 static int32_t s_testPinEventCount = 0;
@@ -79,14 +85,8 @@ static void OnVDDSensorReady(AnalogSensor &sensor)
   OnVDDSensorCalled = true;
 }
 
-void TestVDDAdc()
+static void WaitForAdc(AnalogSensor &sensor)
 {
-  AnalogSensor sensor(10);
-
-  sensor.SetPin(GJ_ADC_VDD);
-  sensor.SetOnReady(OnVDDSensorReady);
-  sensor.Sample();
-  
   const uint32_t begin = GetElapsedMillis();
   while(!sensor.IsReady())
   {
@@ -99,9 +99,42 @@ void TestVDDAdc()
     if ((end - begin) > 500)
       break;
   }
+}
+
+void TestVDDAdc()
+{
+  AnalogSensor sensor(10);
+
+  sensor.SetPin(GJ_ADC_VDD_PIN);
+  sensor.SetOnReady(OnVDDSensorReady);
+  sensor.Sample();
+  
+  WaitForAdc(sensor);
 
   TEST_CASE("VDD Sensor CB called", OnVDDSensorCalled);
-  TEST_CASE("VDD Sensor value >= 250", sensor.GetValue() >= 250);
+  TEST_CASE("VDD Sensor value is [250, 350]", sensor.GetValue() >= 250 && sensor.GetValue() <= 350);
+}
+
+
+void TestAdc()
+{
+  SetupPin(TEST_PIN_D, 0, 0);
+  WritePin(TEST_PIN_D, 1);
+
+  AnalogSensor sensor(10);
+  sensor.SetPin(TEST_PIN_C);
+
+  sensor.Sample();
+  WaitForAdc(sensor);
+  TEST_CASE("HIGH Adc Sensor ready", sensor.IsReady());
+  TEST_CASE("HIGH Adc Sensor value is [250, 350]", sensor.GetValue() >= 250 && sensor.GetValue() <= 350);
+
+  WritePin(TEST_PIN_D, 0);
+
+  sensor.Sample();
+  WaitForAdc(sensor);
+  TEST_CASE("LOW Adc Sensor ready", sensor.IsReady());
+  TEST_CASE("LOW Adc Sensor value is [0, 50]", sensor.GetValue() >= 0 && sensor.GetValue() <= 50);
 }
 
 
@@ -109,4 +142,5 @@ void TestPins()
 {
   TestInputPins();
   TestVDDAdc();
+  TestAdc();
 }

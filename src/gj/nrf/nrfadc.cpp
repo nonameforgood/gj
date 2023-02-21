@@ -69,7 +69,7 @@ void Adc::StartSampling(uint32_t analogInput, uint32_t sampleCount)
     P0.06/AIN7
   */
 
-  m_channel_config = NRF_DRV_ADC_DEFAULT_CHANNEL((uint32_t)1 << analogInput);
+  m_channel_config = NRF_DRV_ADC_DEFAULT_CHANNEL((uint32_t)analogInput);
   
   if (analogInput == 0)
     m_channel_config.config.config.input = NRF_ADC_CONFIG_SCALING_SUPPLY_ONE_THIRD;
@@ -188,6 +188,50 @@ void Adc::CallUserCallback()
   FinishInfo info = {buffer, sampleCount, (int16_t)divider};
 
   ms_instance->m_callback(info);
+}
+
+uint16_t Adc::GetPinChannel(uint32_t pin)
+{
+#if defined(NRF51)
+  const uint32_t channelPins[] = {
+    255, ADC_CONFIG_PSEL_Disabled,      //VDD
+    26,  ADC_CONFIG_PSEL_AnalogInput0,  //AIN0
+    27,  ADC_CONFIG_PSEL_AnalogInput1,  //AIN1
+    1,   ADC_CONFIG_PSEL_AnalogInput2,  //AIN2
+    2,   ADC_CONFIG_PSEL_AnalogInput3,  //AIN3
+    3,   ADC_CONFIG_PSEL_AnalogInput4,  //AIN4
+    4,   ADC_CONFIG_PSEL_AnalogInput5,  //AIN5
+    5,   ADC_CONFIG_PSEL_AnalogInput6,  //AIN6
+    6,   ADC_CONFIG_PSEL_AnalogInput7,  //AIN7
+  }; 
+#elif defined(NRF52)
+  const uint32_t channelPins[] = {
+    2,   SAADC_CH_PSELP_PSELP_AnalogInput0, //AIN0
+    3,   SAADC_CH_PSELP_PSELP_AnalogInput1, //AIN1
+    4,   SAADC_CH_PSELP_PSELP_AnalogInput2, //AIN2
+    5,   SAADC_CH_PSELP_PSELP_AnalogInput3, //AIN3
+    28,  SAADC_CH_PSELP_PSELP_AnalogInput4, //AIN4
+    29,  SAADC_CH_PSELP_PSELP_AnalogInput5, //AIN5
+    30,  SAADC_CH_PSELP_PSELP_AnalogInput6, //AIN6
+    31,  SAADC_CH_PSELP_PSELP_AnalogInput7, //AIN7
+    255, SAADC_CH_PSELP_PSELP_VDD           //VDD
+  }; 
+#endif
+
+  constexpr uint32_t elementCount = sizeof(channelPins) / sizeof(channelPins[0]);
+
+  int32_t channel = -1;
+
+  for (int i = 0 ; i < elementCount ; i += 2)
+  {
+    if (channelPins[i] == pin)
+    {
+      channel = channelPins[i+1];
+      break;
+    }
+  }
+
+  return channel;
 }
 
 
