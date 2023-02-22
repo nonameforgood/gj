@@ -12,6 +12,7 @@
 #elif defined(NRF)
   #include <nrf_gpiote.h>
   #include <nrf_drv_gpiote.h>
+  #include "nrf/nrfadc.h"
 #endif
 
 class Sensor
@@ -122,6 +123,8 @@ private:
   static void OnDigitalChange(DigitalSensor &sensor, uint32_t count);
 };
 
+#define GJ_ADC_VDD_PIN 255
+
 class AnalogSensor : public Sensor
 {
 public:
@@ -134,12 +137,27 @@ public:
   uint32_t GetDetailedRawValue(uint32_t *min, uint32_t *max) const;
 
   void SetOffset(uint32_t offset);
+  
+  void Sample();
+  bool IsReady() const;
 
+  typedef std::function<void(AnalogSensor &sensor)> Function;
+
+  void SetOnReady(Function func);
+  
 private:
   uint32_t m_reads = 1;
   uint32_t m_offset = 0;
   bool m_isADC1 = true;
   uint32_t m_channel = 0;
+
+#if defined(NRF)
+  bool m_ready = false;
+  uint32_t m_value;
+  static void DriverCallback(const Adc::FinishInfo &info);
+  static AnalogSensor* ms_currentSensor;
+  Function m_onReady;
+#endif
 };
 
 class VoltageSensor : public AnalogSensor
