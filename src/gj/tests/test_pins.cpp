@@ -118,7 +118,7 @@ void TestVDDAdc()
   WaitForAdc(sensor);
 
   TEST_CASE("VDD Sensor CB called", OnVDDSensorCalled);
-  TEST_CASE("VDD Sensor value is [250, 350]", sensor.GetValue() >= 250 && sensor.GetValue() <= 350);
+  TEST_CASE_VALUE_INT32("VDD Sensor", sensor.GetValue(), 250, 350);
 #endif
 }
 
