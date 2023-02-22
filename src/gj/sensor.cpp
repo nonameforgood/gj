@@ -504,7 +504,10 @@ void AnalogSensor::SetPin(uint16_t pin)
 
 #if defined(ESP32)
   if (!GetADCChannel(pin, m_isADC1, m_channel))
+  {
+    GJ_ERROR("GetADCChannel with pin %d failed\n\r", pin);
     return;
+  }
 
   if (m_isADC1)
   {
@@ -579,7 +582,10 @@ uint32_t AnalogSensor::GetValue() const
     value += readPin();
   }
 
-  value = value / m_reads + m_offset;
+  value = value / m_reads;
+  
+  value = value * 330 / 4096;
+  value += m_offset;
 #else
   value = m_value;
 #endif

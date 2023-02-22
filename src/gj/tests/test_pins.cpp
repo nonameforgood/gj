@@ -5,10 +5,10 @@
 //must connect TEST_PIN_A to TEST_PIN_B
 
 #if defined(ESP32)
-    #define TEST_PIN_A 23
+    #define TEST_PIN_A 33
     #define TEST_PIN_B 18
 
-    #define TEST_PIN_C 23
+    #define TEST_PIN_C 33
     #define TEST_PIN_D 18
 #elif defined(NRF51)
     #define TEST_PIN_A 11
@@ -32,6 +32,7 @@ GJ_IRAM void OnTestPinA(DigitalSensor &sensor)
 }
 
 #define TEST_CASE(name, cond) SER("Test '%s': %s %s:%d\n\r",(cond) ? "SUCCEEDED" : "   FAILED", name, __FILE__, __LINE__)
+#define TEST_CASE_VALUE_INT32(name, val, min, max) { const int32_t lVal=(val), lMin=(min), lMax=(max); SER("Test '%s': %s (%d <= %d <= %d)\n\r",(lVal >= lMin && lVal <= lMax) ? "SUCCEEDED" : "   FAILED", name, lMin, lVal, lMax); }
 
 void TestInputPins()
 {
@@ -106,6 +107,8 @@ static void WaitForAdc(AnalogSensor &sensor)
 
 void TestVDDAdc()
 {
+  //ESP32 cannot read input voltage
+#if !defined(ESP32)
   AnalogSensor sensor(10);
 
   sensor.SetPin(GJ_ADC_VDD_PIN);
@@ -116,6 +119,7 @@ void TestVDDAdc()
 
   TEST_CASE("VDD Sensor CB called", OnVDDSensorCalled);
   TEST_CASE("VDD Sensor value is [250, 350]", sensor.GetValue() >= 250 && sensor.GetValue() <= 350);
+#endif
 }
 
 
@@ -130,14 +134,14 @@ void TestAdc()
   sensor.Sample();
   WaitForAdc(sensor);
   TEST_CASE("HIGH Adc Sensor ready", sensor.IsReady());
-  TEST_CASE("HIGH Adc Sensor value is [250, 350]", sensor.GetValue() >= 250 && sensor.GetValue() <= 350);
+  TEST_CASE_VALUE_INT32("HIGH Adc Sensor value", sensor.GetValue(), 250, 350);
 
   WritePin(TEST_PIN_D, 0);
 
   sensor.Sample();
   WaitForAdc(sensor);
   TEST_CASE("LOW Adc Sensor ready", sensor.IsReady());
-  TEST_CASE("LOW Adc Sensor value is [0, 50]", sensor.GetValue() >= 0 && sensor.GetValue() <= 50);
+  TEST_CASE_VALUE_INT32("LOW Adc Sensor value", sensor.GetValue(), 0, 50);
 }
 
 
