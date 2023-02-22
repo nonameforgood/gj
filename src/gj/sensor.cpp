@@ -657,7 +657,7 @@ void AnalogSensor::DriverCallback(const Adc::FinishInfo &info)
 
   for (int i = 0; i < info.m_sampleCount; i++)
   {
-    int32_t subValue = info.m_values[i] * 100 / info.m_divider;
+    int32_t subValue = Max<int32_t>(info.m_values[i], 0) * 100 / info.m_divider;
     value += subValue;
   }
 
