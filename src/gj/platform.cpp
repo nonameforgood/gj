@@ -291,7 +291,7 @@ static void PlatformTimerHandler(void *context)
 
 bool IsLFClockAvailable()
 {
-  return nrf_drv_clock_lfclk_is_running();
+  return nrf_drv_clock_init_check() && nrf_drv_clock_lfclk_is_running();
 }
 
 void InitPlatformTimer()
@@ -300,14 +300,15 @@ void InitPlatformTimer()
     return;
 
   //app_timer requires RTC1.
-  //RTC1 requires a CLK source (high or low frequency), use the low freq one to use less power
-  if (!nrf_drv_clock_lfclk_is_running())
+  if (!nrf_drv_clock_init_check())
   {
     ret_code_t err_code = nrf_drv_clock_init();
     APP_ERROR_CHECK(err_code);
-
-    nrf_drv_clock_lfclk_request(NULL);
   }
+
+  //RTC1 requires a CLK source (high or low frequency), use the low freq one to use less power
+  if (!nrf_drv_clock_lfclk_is_running())
+    nrf_drv_clock_lfclk_request(NULL);
 
   s_platformTimer.m_init = true;
 

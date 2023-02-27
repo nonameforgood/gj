@@ -1,8 +1,10 @@
 #include "../base.h"
 #include "../sensor.h"
 #include "../eventmanager.h"
+#include "tests.h"
 
 //must connect TEST_PIN_A to TEST_PIN_B
+//must connect TEST_PIN_C to TEST_PIN_D
 
 #if defined(ESP32)
     #define TEST_PIN_A 33
@@ -30,9 +32,6 @@ GJ_IRAM void OnTestPinA(DigitalSensor &sensor)
 {
     s_testPinEventCount++;
 }
-
-#define TEST_CASE(name, cond) SER("Test '%s': %s %s:%d\n\r",(cond) ? "SUCCEEDED" : "   FAILED", name, __FILE__, __LINE__)
-#define TEST_CASE_VALUE_INT32(name, val, min, max) { const int32_t lVal=(val), lMin=(min), lMax=(max); SER("Test '%s': %s (%d <= %d <= %d)\n\r",(lVal >= lMin && lVal <= lMax) ? "SUCCEEDED" : "   FAILED", name, lMin, lVal, lMax); }
 
 void TestInputPins()
 {
