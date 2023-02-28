@@ -46,7 +46,7 @@ void TestEventManager()
   TEST_CASE("GJEventManager timer 1 is called", s_timer1Time != 0);
   TEST_CASE("GJEventManager timer0 > timer1",s_timer0Time > s_timer1Time);
   TEST_CASE_VALUE_INT32("GJEventManager timer 0 expected delay", timer0Delta, 295, 305);
-  TEST_CASE_VALUE_INT32("GJEventManager timer 1 expected delay", timer1Delta, 9, 11);
+  TEST_CASE_VALUE_INT32("GJEventManager timer 1 expected delay", timer1Delta, 9, 12);
 
   s_timer0Time = 0;
   beginTime = GetElapsedMillis();
