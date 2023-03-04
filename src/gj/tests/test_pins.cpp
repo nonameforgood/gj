@@ -39,17 +39,17 @@ void TestInputPins()
     int32_t pullDown = -1;
     int32_t pullUp = 1;
 
+    bool testPinBOutput = false;
+    SetupPin(TEST_PIN_B, testPinBOutput, 0);
+
     DigitalSensor pinA;
     pinA.SetPin(TEST_PIN_A, pullDown);
     pinA.SetPostISRCB(OnTestPinA);
     pinA.EnableInterrupts(true);
 
-    bool testPinBOutput = false;
-    SetupPin(TEST_PIN_B, testPinBOutput, 0);
-
     WritePin(TEST_PIN_B, 0);
     Delay(100);
-    TEST_CASE("Pin Input Pull down, LOW", s_testPinEventCount == 0);
+    TEST_CASE_VALUE_INT32("Pin Input Pull down, LOW", s_testPinEventCount, 0, 0);
     s_testPinEventCount = 0;
 
     WritePin(TEST_PIN_B, 1);
@@ -112,6 +112,8 @@ void TestInputPinsRefreshRate()
     WritePin(TEST_PIN_B, i % 2);
   }
   
+  Delay(refreshRate);
+
   TEST_CASE_VALUE_INT32("Pin Input Refresh rate", s_testPinEventCount, 1, 9);
 }
 
