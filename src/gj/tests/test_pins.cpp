@@ -1,5 +1,6 @@
 #include "../base.h"
 #include "../sensor.h"
+#include "../sensorcb.h"
 #include "../eventmanager.h"
 #include "tests.h"
 
@@ -28,7 +29,7 @@
 
 static int32_t s_testPinEventCount = 0;
 
-GJ_IRAM void OnTestPinA(DigitalSensor &sensor)
+GJ_IRAM void OnTestPinA(DigitalSensor &sensor, bool updated)
 {
     s_testPinEventCount++;
 }
@@ -81,6 +82,78 @@ void TestInputPins()
     TEST_CASE("Pin Input Pull up, HIGH, LOW, HIGH", s_testPinEventCount == 3);
     s_testPinEventCount = 0;
 }
+
+void TestInputPinsRefreshRate()
+{
+  auto onTestPinARefresh = [](DigitalSensor &sensor, bool updated)
+  {
+    if (updated)
+      s_testPinEventCount++;
+  };
+
+
+  int32_t pullDown = -1;
+  int32_t pullUp = 1;
+
+  uint32_t refreshRate(10);
+  DigitalSensor pinA(refreshRate);
+  pinA.SetPin(TEST_PIN_A, pullDown);
+  pinA.SetPostISRCB(onTestPinARefresh);
+  pinA.EnableInterrupts(true);
+
+  s_testPinEventCount = 0;
+
+  bool testPinBOutput = false;
+  SetupPin(TEST_PIN_B, testPinBOutput, 0);
+
+  for (int i = 0 ; i < 10 ; ++i)
+  {
+    Delay(3);
+    WritePin(TEST_PIN_B, i % 2);
+  }
+  
+  TEST_CASE_VALUE_INT32("Pin Input Refresh rate", s_testPinEventCount, 1, 9);
+}
+
+void TestDigitalSensorAutoToggleCB()
+{
+  uint32_t testPinEventCount = 0;
+
+  auto onTestPinARefresh = [&](DigitalSensor &sensor, uint32_t value)
+  {
+      testPinEventCount++;
+  };
+
+  int32_t pullDown = -1;
+  int32_t pullUp = 1;
+
+  uint32_t refreshRate(10);
+  DigitalSensor pinA(refreshRate);
+  DigitalSensorAutoToggleCB sensorCB(&pinA, 0, -1);
+  pinA.SetPin(TEST_PIN_A, pullDown);
+  pinA.EnableInterrupts(true);
+
+  sensorCB.SetOnChange(onTestPinARefresh);
+
+  bool testPinBIsInput = false;
+  SetupPin(TEST_PIN_B, testPinBIsInput, 0);
+
+  auto refreshEventManager = []()
+  {
+    GJEventManager->WaitForEvents(0);
+  };
+
+  for (int i = 0 ; i < 10 ; ++i)
+  {
+    Delay(refreshRate);
+    WritePin(TEST_PIN_B, i % 2);
+
+    refreshEventManager();
+  }
+  
+  TEST_CASE_VALUE_INT32("Pin Input AutoToggleCB", testPinEventCount, 5, 5);
+}
+
 
 static bool OnVDDSensorCalled = false;
 static void OnVDDSensorReady(AnalogSensor &sensor)
@@ -147,6 +220,8 @@ void TestAdc()
 void TestPins()
 {
   TestInputPins();
+  TestInputPinsRefreshRate();
+  TestDigitalSensorAutoToggleCB();
   TestVDDAdc();
   TestAdc();
 }
