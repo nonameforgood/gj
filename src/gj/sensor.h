@@ -65,7 +65,7 @@ public:
   void OnChange(TCallback cb);
   void OnFall(ConstCallback cb);
   
-  typedef std::function<void(DigitalSensor &sensor)> TPostISRCallback;
+  typedef std::function<void(DigitalSensor &sensor, bool updated)> TPostISRCallback;
 
   void SetPostISRCB(TPostISRCallback cb);
 private:

@@ -196,9 +196,9 @@ void GJ_IRAM DigitalSensor::OnChange()
 {
   const bool updated = UpdateValue();
 
-  if (updated && m_postISR)
+  if (m_postISR)
   {
-    m_postISR(*this);
+    m_postISR(*this, updated);
   }
 }
 
@@ -319,7 +319,7 @@ bool GJ_IRAM DigitalSensor::UpdateValue()
 
   uint32_t current = ReadPin( GetPin() );
   
-  //printf("DigitalSensor::UpdateValue current=%d\n\r", current);
+  //printf("DigitalSensor::UpdateValue previous=%d new=%d\n\r", m_value, current);
 
   if ( current != m_value )
   {
@@ -336,8 +336,12 @@ bool GJ_IRAM DigitalSensor::UpdateValue()
     uint32_t const m = GetElapsedMillis();
     uint32_t const e = m - m_lastChange;
 
+    //printf("DigitalSensor::UpdateValue elapsed=%d refresh=%d\n\r", e, m_refresh);
+
     if ( e > m_refresh )
     {
+      //printf("Pin %d ISR refresh\n\r", GetPin());
+
       if (m_value != 0 && current == 0)
       {
         #ifdef ESP32
@@ -347,11 +351,16 @@ bool GJ_IRAM DigitalSensor::UpdateValue()
         #endif
       }
       
-      m_value = current;
       m_lastChange = m;
 
       updated = true;
     }
+    else
+    {
+      //printf("Pin %d ISR skipped\n\r", GetPin());
+    }
+
+    m_value = current;
   }
 
   return updated;
