@@ -19,15 +19,17 @@ void DigitalSensorCB::SetOnChange(TCallback cb)
 
 GJ_IRAM void DigitalSensorCB::OnSensorISR(DigitalSensor &sensor, bool updated)
 {
-    if (m_onChange && updated)
-    {
-        auto callUserFunc = [&, this]()
-        {
-            m_onChange(sensor, 0);
-        };
+  const int32_t val = ReadPin(sensor.GetPin());
 
-        GJEventManager->Add(callUserFunc);
-    }
+  if (m_onChange && updated)
+  {
+      auto callUserFunc = [&, this, val]()
+      {
+          m_onChange(sensor, val);
+      };
+
+      GJEventManager->Add(callUserFunc);
+  }
 }
 
 
