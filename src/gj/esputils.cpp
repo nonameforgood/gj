@@ -673,21 +673,6 @@ void Command_Reboot()
   Reboot();
 }
 
-int32_t Command_ReadPin(uint32_t pinIndex)
-{
- // uint32_t pinConf = SavePinConf(pinIndex);
-
-  bool input = true;
-  int32_t pull = -1;
-  SetupPin(pinIndex, input, pull);
-  
-  int32_t pinValue = ReadPin(pinIndex);
-
-  //RestorePinConf(pinIndex, pinConf);
-
-  return pinValue;
-}
-
 void Command_ReadPin(const char *command)
 {
   CommandInfo info;
@@ -695,19 +680,54 @@ void Command_ReadPin(const char *command)
 
   if (info.m_argCount < 1)
   {
-    SER("pinread <index>\n\r");
+    SER("pin read <index>\n\r");
     return;
   }
 
-  GJString pinIndexString(info.m_argsBegin[0], info.m_argsLength[0]);
+  uint32_t pinIndex;
 
-  uint32_t pinIndex = atoi(pinIndexString.c_str());
+  {
+    GJString pinIndexString(info.m_argsBegin[0], info.m_argsLength[0]);
 
-  int32_t pinValue = Command_ReadPin(pinIndex);
+    pinIndex = atoi(pinIndexString.c_str());
+  }
 
-  SER("Pin %02d value=%d\n\r", pinIndex, pinValue);
+  int32_t pull = -1;
+
+  if (info.m_argCount >= 2)
+  {
+    GJString argString(info.m_argsBegin[1], info.m_argsLength[1]);
+
+    pull = atoi(argString.c_str());
+  }
+
+  const int32_t pinValue = ReadPin(pinIndex);
+
+  SER("Pin %02d value=%d (pull=%d)\n\r", pinIndex, pinValue, pull);
 }
 
+void Command_SetupPin(const char *command)
+{
+  CommandInfo info;
+  GetCommandInfo(command, info);
+
+  if (info.m_argCount < 2)
+  {
+    SER("pin setup <index> <isInput> [pull]\n\r");
+    return;
+  }
+
+  uint32_t pinIndex = strtol(info.m_argsBegin[0], nullptr, 0) != 0;
+  const bool input = strtol(info.m_argsBegin[1], nullptr, 0) != 0;
+
+  int32_t pull = 0;
+  if (info.m_argCount > 2)
+    pull = strtol(info.m_argsBegin[2], nullptr, 0) != 0;
+
+  SetupPin(pinIndex, input, pull);
+
+  SER("Pin %02d set to %s pull=%d\n\r", pinIndex, input ? "input" : "output", pull);
+}
 
 void Command_WritePin(const char *command)
 {
@@ -716,7 +736,7 @@ void Command_WritePin(const char *command)
 
   if (info.m_argCount < 1)
   {
-    SER("pinwrite <index> <value>\n\r");
+    SER("pin write <index> <value>\n\r");
     return;
   }
 
@@ -747,7 +767,7 @@ void ReadAllPins(uint32_t index)
 
     if (AreTerminalsReady())
     {
-      int32_t pinValue = Command_ReadPin(index);
+      int32_t pinValue = ReadPin(index);
       SER("Pin %02d value=%d\n\r", index, pinValue);
 
       nextIndex++;
@@ -770,25 +790,27 @@ void Command_ReadAllPins()
 
 void Command_Pin(const char *command)
 {
-  static constexpr const char *const s_noArgsName[1] = {
+  static constexpr const char *const s_noArgsName[] = {
     "readall"
   };
 
-  static void (* const s_noargsFuncs[1])(){
+  static void (* const s_noargsFuncs[])(){
     Command_ReadAllPins
     };
 
-  static constexpr const char * const s_argsName[2] = {
+  static constexpr const char * const s_argsName[] = {
     "read",
-    "write"
+    "write",
+    "setup"
   };
 
-  static void (*const s_argsFuncs[2])(const char *){
+  static void (*const s_argsFuncs[])(const char *){
     Command_ReadPin,
-    Command_WritePin
+    Command_WritePin,
+    Command_SetupPin
     };
 
-  SubCommands subCommands = {1, s_noArgsName, s_noargsFuncs, 2, s_argsName, s_argsFuncs};
+  SubCommands subCommands = {1, s_noArgsName, s_noargsFuncs, 3, s_argsName, s_argsFuncs};
 
   SubCommandForwarder(command, subCommands);
 }
