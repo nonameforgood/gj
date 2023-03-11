@@ -4,28 +4,6 @@
 #include "../eventmanager.h"
 #include "tests.h"
 
-//must connect TEST_PIN_A to TEST_PIN_B
-//must connect TEST_PIN_C to TEST_PIN_D
-
-#if defined(ESP32)
-    #define TEST_PIN_A 33
-    #define TEST_PIN_B 18
-
-    #define TEST_PIN_C 33
-    #define TEST_PIN_D 18
-#elif defined(NRF51)
-    #define TEST_PIN_A 11
-    #define TEST_PIN_B 12
-
-    #define TEST_PIN_C 1
-    #define TEST_PIN_D 25
-#elif defined(NRF52)
-    #define TEST_PIN_A 16
-    #define TEST_PIN_B 17
-
-    #define TEST_PIN_C 4
-    #define TEST_PIN_D 29
-#endif
 
 static int32_t s_testPinEventCount = 0;
 

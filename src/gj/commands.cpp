@@ -380,7 +380,7 @@ void SubCommandForwarder(const char *command, const SubCommands &subCommands)
     }
   }
   
-  SER("Invalid command '%.*s'\n\r", commandInfo.m_argsLength[0], commandInfo.m_args[0]);
+  SER("Invalid command '%.*s'\n\r", commandInfo.m_argsLength[0], commandInfo.m_argsBegin[0]);
 }
 
 void InterpretCommand(const char *commandString)

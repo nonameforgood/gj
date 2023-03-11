@@ -55,13 +55,11 @@ uint32_t StringView::length() const
 
 bool operator ==(const StringView &stringView, const char *string)
 {
-  return false;
-  /*
   const uint32_t len = strlen(string);
   if (len != stringView.size())
     return false;
 
-  return strncmp(stringView.data(), string, len) == 0;*/
+  return strncmp(stringView.data(), string, len) == 0;
 }
   
 #endif //USE_GJ_STRING_VIEW
