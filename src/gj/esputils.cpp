@@ -684,26 +684,10 @@ void Command_ReadPin(const char *command)
     return;
   }
 
-  uint32_t pinIndex;
-
-  {
-    GJString pinIndexString(info.m_argsBegin[0], info.m_argsLength[0]);
-
-    pinIndex = atoi(pinIndexString.c_str());
-  }
-
-  int32_t pull = -1;
-
-  if (info.m_argCount >= 2)
-  {
-    GJString argString(info.m_argsBegin[1], info.m_argsLength[1]);
-
-    pull = atoi(argString.c_str());
-  }
-
+  uint32_t pinIndex = strtol(info.m_argsBegin[0], nullptr, 0) != 0;
   const int32_t pinValue = ReadPin(pinIndex);
 
-  SER("Pin %02d value=%d (pull=%d)\n\r", pinIndex, pinValue, pull);
+  SER("Pin %02d value=%d\n\r", pinIndex, pinValue);
 }
 
 void Command_SetupPin(const char *command)
