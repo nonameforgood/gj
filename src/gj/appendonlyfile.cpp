@@ -3,7 +3,7 @@
 
 #if defined(NRF)
 
-  #if defined(NRF_SDK13)
+  #if defined(NRF_SDK12)
     #include <fstorage.h>
     #include "softdevice_handler.h"
   #elif defined(NRF_SDK17)

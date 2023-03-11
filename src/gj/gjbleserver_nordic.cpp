@@ -14,7 +14,7 @@
 
 #include <cctype>  //isprint
 
-#if defined(NRF_SDK13)
+#if defined(NRF_SDK12)
   #include <fstorage.h>
   #include "softdevice_handler.h"
 #elif defined(NRF_SDK17)
@@ -204,7 +204,7 @@ void SerConnParam(const ble_gap_conn_params_t &conn_params)
 #define CONN_SUP_TIMEOUT                MSEC_TO_UNITS(2000, UNIT_10_MS)             /**< Connection supervisory timeout (4 seconds). */
 
 
-#if defined(NRF_SDK13)
+#if defined(NRF_SDK12)
   #define APP_TIMER_PRESCALER             0                                           /**< Value of the RTC1 PRESCALER register. */
   #define FIRST_CONN_PARAMS_UPDATE_DELAY  APP_TIMER_TICKS(5000, APP_TIMER_PRESCALER)  /**< Time from initiating event (connect or start of notification) to first time sd_ble_gap_conn_param_update is called (5 seconds). */
   #define NEXT_CONN_PARAMS_UPDATE_DELAY   APP_TIMER_TICKS(30000, APP_TIMER_PRESCALER) /**< Time between each call to sd_ble_gap_conn_param_update after the first call (30 seconds). */
@@ -686,7 +686,7 @@ void GJBLEServer::HandleBLEEvent(ble_evt_t * p_ble_evt)
 
           DeleteClient(gattsEvt->conn_handle);
           //SetupAdvertising(addl_adv_manuf_data, sizeof(addl_adv_manuf_data));
-          #if defined(NRF_SDK13)
+          #if defined(NRF_SDK12)
             err_code = ble_advertising_start(BLE_ADV_MODE_FAST);
             APP_ERROR_CHECK(err_code);
           #elif defined(NRF_SDK17)
@@ -881,20 +881,20 @@ void GJBLEServer::HandleBLEEvent(ble_evt_t * p_ble_evt)
 void GJBLEServer::OnBLEEvent(ble_evt_t * p_ble_evt)
 {
   BLE_EVT_SER(3, "%8d ====BLE EVENT %s(%d)\n\r", (uint32_t)GetElapsedMillis(), GetNrfEventString(p_ble_evt->header.evt_id), p_ble_evt->header.evt_id);
-#if defined(NRF_SDK13)
+#if defined(NRF_SDK12)
   ble_conn_state_on_ble_evt(p_ble_evt);
 #endif
 
 #if NRF_MODULE_ENABLED(PEER_MANAGER)
   pm_on_ble_evt(p_ble_evt);
 #endif
-#if defined(NRF_SDK13)
+#if defined(NRF_SDK12)
   ble_conn_params_on_ble_evt(p_ble_evt);
 #endif
   if(ms_instance)
     ms_instance->HandleBLEEvent(p_ble_evt);    
 
-#if defined(NRF_SDK13)
+#if defined(NRF_SDK12)
   if (p_ble_evt->header.evt_id != BLE_GAP_EVT_DISCONNECTED)
     ble_advertising_on_ble_evt(p_ble_evt);
 #endif
@@ -921,7 +921,7 @@ void GJBLEServer::OnNewClient(BLEClient *client)
 
 void GJBLEServer::sys_evt_dispatch(uint32_t sys_evt)
 {
-#if defined(NRF_SDK13)
+#if defined(NRF_SDK12)
     // Dispatch the system event to the fstorage module, where it will be
     // dispatched to the Flash Data Storage (FDS) module.
     fs_sys_event_handler(sys_evt);
@@ -1022,7 +1022,7 @@ static void on_adv_evt(ble_adv_evt_t ble_adv_evt)
 
         case BLE_ADV_EVT_IDLE:
             BLE_EVT_SER(3,"Idle advertising\r\n");
-            #if defined(NRF_SDK13)
+            #if defined(NRF_SDK12)
               ble_advertising_start(BLE_ADV_MODE_SLOW);
             #elif defined(NRF_SDK17)
               ble_advertising_start(&m_advertising, BLE_ADV_MODE_SLOW);
@@ -1051,7 +1051,7 @@ void GJBLEServer::SetupAdvertising(const uint8_t* manufUserData, uint32_t manufS
 
   BLE_EVT_SER(3, "SetupAdvertising\n\r");
 
-#if defined(NRF_SDK13)
+#if defined(NRF_SDK12)
 
   ble_advdata_t          advdata;
   ble_adv_modes_config_t options;
@@ -1233,7 +1233,7 @@ void GJBLEServer::Command_bleint(const char *command)
 
 DEFINE_COMMAND_ARGS(ble, GJBLEServer::Command_ble);
 
-#if defined(NRF_SDK13)
+#if defined(NRF_SDK12)
 extern sys_evt_handler_t g_sys_evt_handler;
 #endif
 
@@ -1301,7 +1301,7 @@ bool GJBLEServer::Init()
     err_code = softdevice_ble_evt_handler_set(OnBLEEvent);
     GJ_CHECK_ERROR(err_code);
 
-#if defined(NRF_SDK13)
+#if defined(NRF_SDK12)
     // Overwrite existing sys handler if any
     g_sys_evt_handler = sys_evt_dispatch;
     err_code = softdevice_sys_evt_handler_set(g_sys_evt_handler);
@@ -1353,7 +1353,7 @@ bool GJBLEServer::Init()
     conn_params_init();
 
     
-#if defined(NRF_SDK13)
+#if defined(NRF_SDK12)
     err_code = ble_advertising_start(BLE_ADV_MODE_FAST);
     APP_ERROR_CHECK(err_code);
 #elif defined(NRF_SDK17)
