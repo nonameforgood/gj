@@ -14,7 +14,7 @@
 #include "littlefs/lfs.h"
 #include "nrf51utils.h"
 
-#if defined(NRF_SDK13)
+#if defined(NRF_SDK12)
   #include "softdevice_handler.h"
 #elif defined(NRF_SDK17)
   #include <nrf_sdh.h>
