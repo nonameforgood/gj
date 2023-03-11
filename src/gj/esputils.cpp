@@ -684,7 +684,7 @@ void Command_ReadPin(const char *command)
     return;
   }
 
-  uint32_t pinIndex = strtol(info.m_argsBegin[0], nullptr, 0) != 0;
+  uint32_t pinIndex = strtol(info.m_argsBegin[0], nullptr, 0);
   const int32_t pinValue = ReadPin(pinIndex);
 
   SER("Pin %02d value=%d\n\r", pinIndex, pinValue);
@@ -701,7 +701,7 @@ void Command_SetupPin(const char *command)
     return;
   }
 
-  uint32_t pinIndex = strtol(info.m_argsBegin[0], nullptr, 0) != 0;
+  uint32_t pinIndex = strtol(info.m_argsBegin[0], nullptr, 0);
   const bool input = strtol(info.m_argsBegin[1], nullptr, 0) != 0;
 
   int32_t pull = 0;

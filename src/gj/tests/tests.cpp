@@ -1,6 +1,7 @@
 #include "../base.h"
 #include "tests.h"
 
+void TestPinCommands();
 void TestPins();
 void TestCommands();
 void TestConfig();
@@ -20,6 +21,7 @@ void TestGJ()
 {
   SER("Starting tests...\n");
 
+  TestPinCommands();
   TestPins();
   TestCommands();
   TestConfig();
