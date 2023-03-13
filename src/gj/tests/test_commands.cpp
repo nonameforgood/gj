@@ -138,17 +138,14 @@ void TestCommands()
     CommandInfo info;
     GetCommandInfo(command, info);
 
-    CommandInfo2 info2;
-    ConvertCommandInfo(info, info2);
+    TEST_CASE_VALUE_INT32("command length", info.m_commandLength, 14, 14);
+    TEST_CASE_VALUE_INT32("command total length", info.m_totalLength, 62, 62);
+    TEST_CASE_VALUE_INT32("command arg count", info.m_argCount, 4, 4);
 
-    TEST_CASE_VALUE_INT32("command length", info2.m_commandLength, 14, 14);
-    TEST_CASE_VALUE_INT32("command total length", info2.m_totalLength, 62, 62);
-    TEST_CASE_VALUE_INT32("command arg count", info2.m_argCount, 4, 4);
-
-    TEST_CASE("command arg", info2.m_args[0] == "argA");
-    TEST_CASE("command space", info2.m_args[1] == "some spaces here");
-    TEST_CASE("command argB", info2.m_args[2] == "argB");
-    TEST_CASE("command space", info2.m_args[3] == "some more spaces");
+    TEST_CASE("command arg", info.m_args[0] == "argA");
+    TEST_CASE("command space", info.m_args[1] == "some spaces here");
+    TEST_CASE("command argB", info.m_args[2] == "argB");
+    TEST_CASE("command space", info.m_args[3] == "some more spaces");
   }
 
 }

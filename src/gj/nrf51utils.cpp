@@ -278,19 +278,13 @@ void BootIntoPartition()
 
 void Command_WriteBoot(const char * command)
 {
-  CommandInfo2 info;
-
-  {
-    CommandInfo infoTemp;
-    GetCommandInfo(command, infoTemp);
-    ConvertCommandInfo(infoTemp, info);
-  }
+  CommandInfo info;
 
   uint32_t partition = 0;
 
   if (info.m_argCount)
   {
-    partition = atoi(info.m_args[0].c_str());
+    partition = strtol(info.m_args[0].data(), nullptr, 0);
     partition = Min<uint32_t>(partition, 1);
   }
 

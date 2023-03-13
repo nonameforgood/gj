@@ -1133,32 +1133,26 @@ bool GJBLEServer::Init(const char *hostname, GJOTA *ota)
 
 void GJBLEServer::Command_ble(const char *command)
 {
-  static constexpr const char *const s_noArgsName[3] = {
+  static constexpr const char * const s_argsName[] = {
     "on",
     "off",
-    "dbg"
-  };
-
-  static void (* const s_noargsFuncs[3])(){
-    Command_bleon,
-    Command_bleoff,
-    Command_bledbg
-    };
-
-  static constexpr const char * const s_argsName[1] = {
+    "dbg",
     "int"
   };
 
-  static void (*const s_argsFuncs[1])(const char *){
+  static void (*const s_argsFuncs[])(const CommandInfo &commandInfo){
+    Command_bleon,
+    Command_bleoff,
+    Command_bledbg,
     Command_bleint
     };
 
-  SubCommands subCommands = {3, s_noArgsName, s_noargsFuncs, 1, s_argsName, s_argsFuncs};
+  SubCommands subCommands = {4, s_argsName, s_argsFuncs};
 
   SubCommandForwarder(command, subCommands);
 }
 
-void GJBLEServer::Command_bledbg()
+void GJBLEServer::Command_bledbg(const CommandInfo &info)
 {
   const uint32_t clientCount = GetInstance()->m_clients.size();
   const uint32_t dataCount = GetInstance()->m_dataBuffers.size();
@@ -1187,23 +1181,20 @@ void GJBLEServer::Command_bledbg()
   //SER("  Out characteristic sub count:%d\n\r", m_outChar->GetChar()->getSubscribedCount());
 }
 
-void GJBLEServer::Command_bleon()
+void GJBLEServer::Command_bleon(const CommandInfo &commandInfo)
 {
   if (ms_instance)
     ms_instance->Init();
 }
 
-void GJBLEServer::Command_bleoff()
+void GJBLEServer::Command_bleoff(const CommandInfo &commandInfo)
 {
   if (ms_instance)
     ms_instance->Term();
 }
 
-void GJBLEServer::Command_bleint(const char *command)
+void GJBLEServer::Command_bleint(const CommandInfo &info)
 {
-  CommandInfo2 info;
-  GetCommandInfo(command, info);
-
   if (ms_instance)
   {
     BLEClient *client = ms_instance->m_clients.front();
@@ -1218,10 +1209,10 @@ void GJBLEServer::Command_bleint(const char *command)
     gap_conn_params.conn_sup_timeout  = CONN_SUP_TIMEOUT;
 
     if (info.m_argCount >= 1)
-      gap_conn_params.min_conn_interval = atoi(info.m_args[0].c_str());
+      gap_conn_params.min_conn_interval = strtol(info.m_args[0].data(), nullptr, 0);
 
     if (info.m_argCount >= 2)
-      gap_conn_params.max_conn_interval = atoi(info.m_args[1].c_str());
+      gap_conn_params.max_conn_interval = strtol(info.m_args[1].data(), nullptr, 0);
 
     int32_t err_code = sd_ble_gap_conn_param_update(client->GetConnId(), &gap_conn_params);
     if (err_code != NRF_SUCCESS)

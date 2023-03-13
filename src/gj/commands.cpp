@@ -320,26 +320,6 @@ void GetCommandInfo(const char *command, CommandInfo &info)
   }
 }
 
-void ConvertCommandInfo(CommandInfo const &src, CommandInfo2 &dst)
-{
-  dst.m_commandLength = src.m_commandLength;
-  dst.m_totalLength = src.m_totalLength;
-  dst.m_argCount = src.m_argCount;
-
-  for (int i = 0 ; i < src.m_argCount ; ++i)
-  {
-    dst.m_args[i] = FormatString("%.*s", src.m_argsLength[i], src.m_argsBegin[i]);
-  }
-}
-
-void GetCommandInfo(const char *command, CommandInfo2 &info2)
-{
-  CommandInfo info;
-  GetCommandInfo(command, info);
-
-  ConvertCommandInfo(info, info2);
-}
-
 void SubCommandForwarder(const char *command, const SubCommands &subCommands)
 {
   CommandInfo commandInfo;
@@ -348,13 +328,9 @@ void SubCommandForwarder(const char *command, const SubCommands &subCommands)
   if (commandInfo.m_argCount < 1)
   {
     SER("Available commands:\n\r");
-    for (int32_t i = 0 ; i < subCommands.m_noArgsCount ; ++i)
+    for (int32_t i = 0 ; i < subCommands.m_count ; ++i)
     {
-      SER("  %s\n\r", subCommands.m_noArgsNames[i]);
-    }
-    for (int32_t i = 0 ; i < subCommands.m_argsCount ; ++i)
-    {
-      SER("  %s\n\r", subCommands.m_argsNames[i]);
+      SER("  %s\n\r", subCommands.m_names[i]);
     }
     return;
   }
@@ -362,24 +338,29 @@ void SubCommandForwarder(const char *command, const SubCommands &subCommands)
   const char *commandPos = commandInfo.m_argsBegin[0];
   auto arg0 = commandInfo.m_args[0];
 
-  for (int32_t i = 0 ; i < subCommands.m_noArgsCount ; ++i)
+  for (int32_t i = 0 ; i < subCommands.m_count ; ++i)
   {
-    if (arg0 == subCommands.m_noArgsNames[i])
+    if (arg0 == subCommands.m_names[i])
     {
-      subCommands.m_noArgsFuncs[i]();
+      CommandInfo subCommandinfo;
+
+      subCommandinfo.m_commandLength = 0;
+      subCommandinfo.m_totalLength = commandInfo.m_totalLength - commandInfo.m_argsOffset[0] - arg0.size();
+      subCommandinfo.m_argCount = commandInfo.m_argCount - 1;
+
+      for (int32_t j = 0 ; j < 3 ; ++j)
+      {
+        subCommandinfo.m_argsBegin[j] = commandInfo.m_argsBegin[j + 1];
+        subCommandinfo.m_argsOffset[j] = commandInfo.m_argsOffset[j + 1];
+        subCommandinfo.m_argsLength[j] = commandInfo.m_argsLength[j + 1];
+        subCommandinfo.m_args[j] = commandInfo.m_args[j + 1];
+      }
+
+      subCommands.m_funcs[i](subCommandinfo);
       return;
     }
   }
 
-  for (int32_t i = 0 ; i < subCommands.m_argsCount ; ++i)
-  {
-    if (arg0 == subCommands.m_argsNames[i])
-    {
-      subCommands.m_argsFuncs[i](commandPos);
-      return;
-    }
-  }
-  
   SER("Invalid command '%.*s'\n\r", commandInfo.m_argsLength[0], commandInfo.m_argsBegin[0]);
 }
 
