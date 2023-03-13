@@ -29,6 +29,15 @@ void LogTest(const char *name, bool success);
   SER("Test '%s': %s (%p <= %p <= %p)\n\r", res ? "SUCCEEDED" : "   FAILED", lName, lMin, lVal, lMax);  \
 }
 
+#define TEST_CASE_VALUE_BOOL(name, val, expect)                                                         \
+{                                                                                                       \
+  const bool lVal=(val), lExpect=(expect);                                                              \
+  const bool res = (lVal == lExpect);                                                                   \
+  const auto lName = (name);                                                                            \
+  LogTest(lName, res);                                                                                  \
+  SER("Test '%s': %s (%d == %d)\n\r", res ? "SUCCEEDED" : "   FAILED", lName, lVal, lExpect);           \
+}
+
 //must connect TEST_PIN_A to TEST_PIN_B
 //must connect TEST_PIN_C to TEST_PIN_D
 

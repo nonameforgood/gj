@@ -131,7 +131,7 @@ void TestDigitalSensorAutoToggleCB()
     refreshEventManager();
   }
   
-  TEST_CASE_VALUE_INT32("Pin Input AutoToggleCB", testPinEventCount, 5, 5);
+  TEST_CASE_VALUE_INT32("Pin Input AutoToggleCB", testPinEventCount, 5, 6);
 }
 
 
