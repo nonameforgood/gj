@@ -2,6 +2,35 @@
 #include "../commands.h"
 #include "tests.h"
 
+
+static bool SubCommand_TestA_Called = false;
+static bool SubCommand_TestB_Called = false;
+static bool SubCommand_TestC_Called = false;
+
+static void SubCommand_TestA(const CommandInfo &info)
+{
+  SubCommand_TestA_Called = true;
+
+  TEST_CASE_VALUE_BOOL("SubCommand_TestA arg a", info.m_args[0] == "argA", true);
+  TEST_CASE_VALUE_BOOL("SubCommand_TestA arg b", info.m_args[1] == "argB", true);
+  TEST_CASE_VALUE_BOOL("SubCommand_TestA arg c", info.m_args[2] == "argC", true);
+}
+
+static void SubCommand_TestB(const CommandInfo &info)
+{
+  SubCommand_TestB_Called = true;
+  TEST_CASE_VALUE_BOOL("SubCommand_TestB arg a", info.m_args[0] == "argD", true);
+  TEST_CASE_VALUE_BOOL("SubCommand_TestB arg b", info.m_args[1] == "argE", true);
+  TEST_CASE_VALUE_BOOL("SubCommand_TestB arg c", info.m_args[2] == "argF", true);
+}
+
+static void SubCommand_TestC(const CommandInfo &info)
+{
+  SubCommand_TestC_Called = true;
+  TEST_CASE_VALUE_INT32("SubCommand_TestC no args", info.m_argCount, 0, 0);
+}
+
+
 void TestCommands()
 {
 
@@ -127,28 +156,67 @@ void TestCommands()
     TEST_CASE_VALUE_INT32("command arg length", info.m_argsLength[1], 16, 16);
     TEST_CASE_VALUE_INT32("command arg length", info.m_argsLength[2], 4, 4);
     TEST_CASE_VALUE_INT32("command arg length", info.m_argsLength[3], 16, 16);
-
   }
 
+  BEGIN_TEST(SubCommands)
+  { 
+    static constexpr const char * const names[] = {
+      "testa",
+      "testb",
+      "testc"
+    };
 
-  BEGIN_TEST(CommandInfo_ConvertCommandInfo)
-  {
-    const char *command = "commandName222 argA \"some spaces here\" argB \"some more spaces\"";
+    static void (*const funcs[])(const CommandInfo &commandInfo){
+      SubCommand_TestA,
+      SubCommand_TestB,
+      SubCommand_TestC
+      };
 
-    CommandInfo info;
-    GetCommandInfo(command, info);
+    const SubCommands subCommands = {3, names, funcs};
 
-    CommandInfo2 info2;
-    ConvertCommandInfo(info, info2);
+    {
+      const char *command = "somecmd testa argA argB argC";
+      SubCommandForwarder(command, subCommands);
+      TEST_CASE_VALUE_BOOL("SubCommand TestA Called", SubCommand_TestA_Called, true);
+    }
 
-    TEST_CASE_VALUE_INT32("command length", info2.m_commandLength, 14, 14);
-    TEST_CASE_VALUE_INT32("command total length", info2.m_totalLength, 62, 62);
-    TEST_CASE_VALUE_INT32("command arg count", info2.m_argCount, 4, 4);
+    {
+      const char *command = "somecmd testb argD argE argF";
+      SubCommandForwarder(command, subCommands);
+      TEST_CASE_VALUE_BOOL("SubCommand TestB Called", SubCommand_TestB_Called, true);
+    }
 
-    TEST_CASE("command arg", info2.m_args[0] == "argA");
-    TEST_CASE("command space", info2.m_args[1] == "some spaces here");
-    TEST_CASE("command argB", info2.m_args[2] == "argB");
-    TEST_CASE("command space", info2.m_args[3] == "some more spaces");
+    {
+      const char *command = "somecmd testc";
+      SubCommandForwarder(command, subCommands);
+      TEST_CASE_VALUE_BOOL("SubCommand TestC Called", SubCommand_TestC_Called, true);
+    }
+
+    SubCommand_TestA_Called = false;
+    SubCommand_TestB_Called = false;
+    SubCommand_TestC_Called = false;
+
+    //test unknown command
+    {
+      const char *command = "somecmd testi arg";
+      SubCommandForwarder(command, subCommands);
+      TEST_CASE_VALUE_BOOL("SubCommand not listed, TestA not called", SubCommand_TestA_Called, false);
+      TEST_CASE_VALUE_BOOL("SubCommand not listed, TestB not called", SubCommand_TestB_Called, false);
+      TEST_CASE_VALUE_BOOL("SubCommand not listed, TestC not called", SubCommand_TestC_Called, false);
+    }
+
+    
+    SubCommand_TestA_Called = false;
+    SubCommand_TestB_Called = false;
+    SubCommand_TestC_Called = false;
+
+    //test no command
+    {
+      const char *command = "somecmd";
+      SubCommandForwarder(command, subCommands);
+      TEST_CASE_VALUE_BOOL("SubCommand none, TestA not called", SubCommand_TestA_Called, false);
+      TEST_CASE_VALUE_BOOL("SubCommand none, TestB not called", SubCommand_TestB_Called, false);
+      TEST_CASE_VALUE_BOOL("SubCommand none, TestC not called", SubCommand_TestC_Called, false);
+    }
   }
-
 }

@@ -14,6 +14,7 @@
 #include "ble.h"
 
 class GJOTA;
+struct CommandInfo;
 
 struct ble_addr_t
 {
@@ -42,10 +43,10 @@ public:
   static GJBLEServer* GetInstance();
 
   static void Command_ble(const char *command);
-  static void Command_bledbg();
-  static void Command_bleon();
-  static void Command_bleoff();
-  static void Command_bleint(const char *command);
+  static void Command_bledbg(const CommandInfo &commandInfo);
+  static void Command_bleon(const CommandInfo &commandInfo);
+  static void Command_bleoff(const CommandInfo &commandInfo);
+  static void Command_bleint(const CommandInfo &commandInfo);
 
 protected:
   class BLEClient;

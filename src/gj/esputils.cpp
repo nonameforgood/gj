@@ -673,11 +673,8 @@ void Command_Reboot()
   Reboot();
 }
 
-void Command_ReadPin(const char *command)
+void Command_ReadPin(const CommandInfo &info)
 {
-  CommandInfo info;
-  GetCommandInfo(command, info);
-
   if (info.m_argCount < 1)
   {
     SER("pin read <index>\n\r");
@@ -690,11 +687,8 @@ void Command_ReadPin(const char *command)
   SER("Pin %02d value=%d\n\r", pinIndex, pinValue);
 }
 
-void Command_SetupPin(const char *command)
+void Command_SetupPin(const CommandInfo &info)
 {
-  CommandInfo info;
-  GetCommandInfo(command, info);
-
   if (info.m_argCount < 2)
   {
     SER("pin setup <index> <isInput> [pull]\n\r");
@@ -706,18 +700,15 @@ void Command_SetupPin(const char *command)
 
   int32_t pull = 0;
   if (info.m_argCount > 2)
-    pull = strtol(info.m_argsBegin[2], nullptr, 0) != 0;
+    pull = strtol(info.m_argsBegin[2], nullptr, 0);
 
   SetupPin(pinIndex, input, pull);
 
   SER("Pin %02d set to %s pull=%d\n\r", pinIndex, input ? "input" : "output", pull);
 }
 
-void Command_WritePin(const char *command)
+void Command_WritePin(const CommandInfo &info)
 {
-  CommandInfo info;
-  GetCommandInfo(command, info);
-
   if (info.m_argCount < 1)
   {
     SER("pin write <index> <value>\n\r");
@@ -767,34 +758,28 @@ void ReadAllPins(uint32_t index)
   }
 }
 
-void Command_ReadAllPins()
+void Command_ReadAllPins(const CommandInfo &info)
 {
   ReadAllPins(0);
 }
 
 void Command_Pin(const char *command)
 {
-  static constexpr const char *const s_noArgsName[] = {
-    "readall"
-  };
-
-  static void (* const s_noargsFuncs[])(){
-    Command_ReadAllPins
-    };
-
   static constexpr const char * const s_argsName[] = {
     "read",
     "write",
-    "setup"
+    "setup",
+    "readall"
   };
 
-  static void (*const s_argsFuncs[])(const char *){
+  static void (*const s_argsFuncs[])(const CommandInfo &commandInfo){
     Command_ReadPin,
     Command_WritePin,
-    Command_SetupPin
+    Command_SetupPin,
+    Command_ReadAllPins
     };
 
-  SubCommands subCommands = {1, s_noArgsName, s_noargsFuncs, 3, s_argsName, s_argsFuncs};
+  const SubCommands subCommands = {4, s_argsName, s_argsFuncs};
 
   SubCommandForwarder(command, subCommands);
 }

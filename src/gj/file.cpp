@@ -32,11 +32,13 @@
 
 void DumpFileHex(GJString path, uint32_t offset);
 void DumpFile(GJString path, uint32_t offset);
-void Command_info() 
+
+void Command_info(const CommandInfo &commandInfo ) 
 {
   ShowFSInfo();
 }
-void Command_formatfs() 
+
+void Command_formatfs(const CommandInfo &commandInfo) 
 {
   HANDLE_MULTI_EXE_CMD(3);
   
@@ -61,12 +63,8 @@ void Command_formatfs()
   ShowFSInfo();
 }
 
-void Command_rename(const char*command) 
+void Command_rename(const CommandInfo &info) 
 {
-  
-  CommandInfo info;
-  GetCommandInfo(command, info);
-  
   if (info.m_argCount != 2)
   {
     SER("  arg err");
@@ -92,11 +90,7 @@ void Command_rename(const char*command)
   SER("  Renamed from '%s' to '%s':%s\n\r", oldName, newName, ret ? "SUCCESS" : "FAILED");
 }
 
-void Command_delete(const char*command) {
-    
-  CommandInfo info;
-  GetCommandInfo(command, info);
-  
+void Command_delete(const CommandInfo &info) {
   if (info.m_argCount != 1)
   {
     SER("  arg err");
@@ -108,11 +102,7 @@ void Command_delete(const char*command) {
   SER("  Deleted '%s':%s\n\r", info.m_argsBegin[0], ret ? "SUCCESS" : "FAILED");
 } 
 
-void Command_dumpfilehex(const char*command) {
-      
-  CommandInfo info;
-  GetCommandInfo(command, info);
-
+void Command_dumpfilehex(const CommandInfo &info) {
   if (info.m_argCount != 1)
   {
     SER("  arg err");
@@ -135,11 +125,7 @@ void Command_dumpfilehex(const char*command) {
   DumpFileHex(path, 0);
 } 
 
-void Command_dumpfile(const char*command) {
-      
-  CommandInfo info;
-  GetCommandInfo(command, info);
-
+void Command_dumpfile(const CommandInfo &info) {
   if (info.m_argCount != 1)
   {
     SER("  arg err");
@@ -208,33 +194,29 @@ const char *GetAppFolder()
   return s_appFolder;
 }
 
+
 void Command_fs(const char *command)
 {
-  static constexpr const char *const s_noArgsName[2] = {
+  static constexpr const char * const s_argsName[] = {
     "info",
-    "format"
-  };
-
-  static void (* const s_noargsFuncs[2])(){
-    Command_info,
-    Command_formatfs
-    };
-
-  static constexpr const char * const s_argsName[4] = {
+    "format",
     "rename",
     "delete",
     "dump",
     "dumphex"
   };
 
-  static void (*const s_argsFuncs[4])(const char *){
+  static void (*const s_argsFuncs[])(const CommandInfo &commandInfo){
+    Command_info,
+    Command_formatfs,
     Command_rename,
     Command_delete,
     Command_dumpfile,
-    Command_dumpfilehex
+    Command_dumpfilehex,
+    
     };
 
-  SubCommands subCommands = {2, s_noArgsName, s_noargsFuncs, 4, s_argsName, s_argsFuncs};
+  const SubCommands subCommands = {6, s_argsName, s_argsFuncs};
 
   SubCommandForwarder(command, subCommands);
 }
@@ -243,7 +225,6 @@ DEFINE_COMMAND_ARGS(fs,Command_fs);
 
 DEFINE_CONFIG_BOOL(file.dbg, file_dbg, false);
 DEFINE_CONFIG_BOOL(file.autoflush, file_autoflush, false);
-
 
 void InitFileSystem(const char *appFolder)
 {

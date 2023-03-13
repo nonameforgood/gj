@@ -31,23 +31,12 @@ struct CommandInfo
   StringView m_args[MaxArgs] = {};
 };
 
-struct CommandInfo2
-{
-  static const uint32_t MaxArgs = 4;
-  uint32_t m_commandLength = 0;
-  uint32_t m_totalLength = 0;
-  GJString m_args[MaxArgs];
-  uint32_t m_argCount = 0;
-};
-
-
 template <typename T>
 struct CommandDefInfo
 {
   const char * const m_command;
   const T *m_cb;
 };
-
 
 #if defined(ESP32)
   #define GJ_COMMAND_USE_SECTION 0
@@ -83,27 +72,18 @@ bool ForceLinkSymbol(const void *p);
 
 
 void GetCommandInfo(const char *command, CommandInfo &info);
-void GetCommandInfo(const char *command, CommandInfo2 &info);
-
-void ConvertCommandInfo(CommandInfo const &src, CommandInfo2 &dst);
 
 void GetCommands(Vector<GJString> &commands);
 
 void GetCommandIds(Vector<uint16_t> &commands);
 GJString DescribeCommand(uint16_t id);
 
-
 struct SubCommands
 {
-  uint32_t m_noArgsCount;
-  const char * const * m_noArgsNames;
-  void (* const * m_noArgsFuncs)();
-
-  uint32_t m_argsCount;
-  const char * const *m_argsNames;
-  void (* const * m_argsFuncs)(const char *command);
+  uint32_t m_count;
+  const char * const *m_names;
+  void (* const * m_funcs)(const CommandInfo &commandInfo);
 };
 
 void SubCommandForwarder(const char *command, const SubCommands &subCommands);
-
 void InitCommands(uint32_t maxArgsCommands);
