@@ -254,9 +254,9 @@ void EventManager::Command_dbg()
 
     int64_t expireUnix = (de.m_time - elapsedUS) / 1000 / 1000 + unixtime;
 
-    SER("    id:%d Frame:%d Delay:%d Added:%d Expire:%d (unix expire:%d unix:%d)\n\r",
+    SER("    id:%d Frame:%d Expire:%d (unix expire:%d unix:%d)\n\r",
       de.m_event->m_id, de.m_event->m_frameId,
-      (uint32_t)de.m_delay, (uint32_t)de.m_addTime, (uint32_t)de.m_time,
+      (uint32_t)de.m_time,
       (uint32_t)expireUnix, unixtime);
   }
 }
@@ -328,14 +328,12 @@ void EventManager::AddEvent(Event *e)
 void EventManager::DelayAdd(Function const &func, uint64_t delayUS)
 {
     DelayedEvent e;
-    e.m_delay = delayUS;
-    e.m_addTime = GetElapsedMicros();
     e.m_time = GetElapsedMicros() + delayUS;
     e.m_event = new Event;
     e.m_event->m_id = nextId++;
     e.m_event->m_frameId = m_frameId;
     e.m_event->m_function = func;
-    
+
     {
 #ifdef ESP32
         GJ_AUTO_LOCK(m_lock);
@@ -343,7 +341,7 @@ void EventManager::DelayAdd(Function const &func, uint64_t delayUS)
 
         m_delayedEvents.push_back(e);
 
-        
+        m_timerDirty = true;
         SetNextTimer();
         EM_SER("EM:delayed event %d added\n\r", e.m_event->m_id);
     }
@@ -361,6 +359,8 @@ void EventManager::ProcessDelayedEvents()
 #ifdef ESP32
     GJ_AUTO_LOCK(m_lock);
 #endif
+
+    m_timerDirty = true;
 
     auto it = m_delayedEvents.begin();
     
@@ -387,25 +387,21 @@ void EventManager::ProcessDelayedEvents()
 
 void EventManager::SetNextTimer()
 {
+    if (!m_timerDirty)
+      return;
+
     int64_t inv = 0x0fffFFFFffffFFFF;
     int64_t next = inv;
 
-    int32_t i = 0;
-
     for (DelayedEvent &e : m_delayedEvents)
     {
-        int64_t delay = (int64_t)e.m_time - (int64_t)GetElapsedMicros();
-
-        if (delay < next)
-        {
-            next = std::min(next, delay);
-        }
-
-        ++i;
+        if (e.m_time < next)
+            next = e.m_time;
     }
 
     if (next != inv)
     {
+        next = next - GetElapsedMicros();
         if (next < 0)
             next = 0;
 
@@ -416,6 +412,7 @@ void EventManager::SetNextTimer()
         }
 
         m_timer->Set(next);
+        m_timerDirty = false;
     }
 }
 

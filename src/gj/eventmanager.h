@@ -29,8 +29,6 @@ private:
 
     struct DelayedEvent
     {
-        uint64_t m_delay;
-        uint64_t m_addTime;
         uint64_t m_time;
         Event *m_event;
     };
@@ -51,6 +49,8 @@ private:
     Event *m_skippedEvent = nullptr;
 
     GJTimer *m_timer = nullptr;
+    
+    bool m_timerDirty = true;
 
     GJ_IRAM void AddEvent(Event *e);
     bool HandleEvent(Event *e);
