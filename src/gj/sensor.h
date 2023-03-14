@@ -52,9 +52,18 @@ public:
   DigitalSensor(U16 refresh = 10);
   ~DigitalSensor();
   
+  enum Polarity
+  {
+    Toggle = 1,
+    Rise   = 2,
+    Fall   = 3
+  };
+
   void SetPin(uint16_t pin, int32_t pull = -1);
+  void SetPolarity(Polarity polarity);
   virtual void Update();
   virtual uint32_t GetValue() const { return m_value; }
+  Polarity GetPolarity() const;
 
   void EnableInterrupts(bool enable);
 
@@ -69,21 +78,13 @@ public:
 
   void SetPostISRCB(TPostISRCallback cb);
 
-  enum Polarity
-  {
-    Toggle = 1,
-    Rise   = 2,
-    Fall   = 3
-  };
-
-  Polarity m_polarity = Toggle;
-
 private:
   uint16_t const m_refresh;
   uint32_t m_lastChange = 0;
   uint32_t m_value = 0;
   int32_t m_pull = -1;
   bool m_enableInterrupts = false;
+  Polarity m_polarity = Toggle;
   
   bool m_wakeHandled = false;
 
