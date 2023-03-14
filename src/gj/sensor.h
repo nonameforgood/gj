@@ -68,6 +68,16 @@ public:
   typedef std::function<void(DigitalSensor &sensor, bool updated)> TPostISRCallback;
 
   void SetPostISRCB(TPostISRCallback cb);
+
+  enum Polarity
+  {
+    Toggle = 1,
+    Rise   = 2,
+    Fall   = 3
+  };
+
+  Polarity m_polarity = Toggle;
+
 private:
   uint16_t const m_refresh;
   uint32_t m_lastChange = 0;
@@ -76,7 +86,7 @@ private:
   bool m_enableInterrupts = false;
   
   bool m_wakeHandled = false;
-  
+
 #ifdef ESP32
   std::atomic<uint32_t> m_fallCount;
   std::atomic<uint32_t> m_changeCount;

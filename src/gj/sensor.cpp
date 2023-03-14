@@ -100,6 +100,14 @@ void DigitalSensor::EnableInterrupts(bool enable)
 #if defined(NRF)
     InitGPIOTE();
 
+    nrf_gpiote_polarity_t polarity;
+    if (m_polarity == Toggle)
+      polarity = NRF_GPIOTE_POLARITY_TOGGLE;
+    else if (m_polarity == Rise)
+      polarity = NRF_GPIOTE_POLARITY_LOTOHI;
+    else
+      polarity = NRF_GPIOTE_POLARITY_HITOLO;
+
     nrf_gpio_pin_pull_t nrfPull = NRF_GPIO_PIN_NOPULL;
     if (m_pull < 0)
       nrfPull = NRF_GPIO_PIN_PULLDOWN;
@@ -109,7 +117,7 @@ void DigitalSensor::EnableInterrupts(bool enable)
     bool is_watcher = false;
     bool hi_accuracy = false;
   nrf_drv_gpiote_in_config_t cfg = {
-    NRF_GPIOTE_POLARITY_TOGGLE,
+    polarity,
     nrfPull,
     is_watcher,
     hi_accuracy
@@ -179,7 +187,14 @@ void DigitalSensor::SetPin(uint16_t pin, int32_t pull)
 
 #ifdef ESP32
   UpdateValue();
-  attachInterruptArg(digitalPinToInterrupt(pin), InterruptHandler, this, CHANGE);
+  int32_t polarity;
+  if (m_polarity == Toggle)
+    polarity = CHANGE;
+  else if (m_polarity == Rise)
+    polarity = RISING;
+  else
+    polarity = FALLING;
+  attachInterruptArg(digitalPinToInterrupt(pin), InterruptHandler, this, polarity);
 #elif defined(NRF)
   if (m_enableInterrupts)
   {
@@ -317,50 +332,38 @@ bool GJ_IRAM DigitalSensor::UpdateValue()
 {
   bool updated = false;
 
-  uint32_t current = ReadPin( GetPin() );
-  
   //printf("DigitalSensor::UpdateValue previous=%d new=%d\n\r", m_value, current);
 
-  if ( current != m_value )
+  uint32_t const m = GetElapsedMillis();
+  uint32_t const e = m - m_lastChange;
+
+  if ( e > m_refresh )
   {
-    //use gpio pin to feed V+ instead of using directly VCC
-    //and then set it to LOW to check if connected
-    m_detected = true;
-    
-    #ifdef ESP32
-      m_changeCount++;
-    #elif defined(NRF)
-      GJAtomicAdd(m_changeCount, 1);
-    #endif
+    uint32_t current = ReadPin( GetPin() );
 
-    uint32_t const m = GetElapsedMillis();
-    uint32_t const e = m - m_lastChange;
-
-    //printf("DigitalSensor::UpdateValue elapsed=%d refresh=%d\n\r", e, m_refresh);
-
-    if ( e > m_refresh )
+    if ( current != m_value )
     {
-      //printf("Pin %d ISR refresh\n\r", GetPin());
+      //use gpio pin to feed V+ instead of using directly VCC
+      //and then set it to LOW to check if connected
+      m_detected = true;
+      
+      #ifdef ESP32
+        m_changeCount++;
 
       if (m_value != 0 && current == 0)
       {
         #ifdef ESP32
           m_fallCount++;
         #elif defined(NRF)
-          GJAtomicAdd(m_fallCount, 1);
+          //GJAtomicAdd(m_fallCount, 1);
         #endif
       }
-      
-      m_lastChange = m;
-
-      updated = true;
-    }
-    else
-    {
-      //printf("Pin %d ISR skipped\n\r", GetPin());
+      #endif
     }
 
+    m_lastChange = m;
     m_value = current;
+    updated = true;
   }
 
   return updated;
