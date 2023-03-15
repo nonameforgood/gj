@@ -196,6 +196,157 @@ void TestAdc()
   TEST_CASE_VALUE_INT32("LOW Adc Sensor value", sensor.GetValue(), 0, 50);
 }
 
+void TestDigitalSensorToggle()
+{
+  int32_t pullDown = -1;
+  int32_t pullUp = 1;
+  int32_t isrCount = 0;
+
+  bool testPinBIsInput = false;
+  SetupPin(TEST_PIN_B, testPinBIsInput, 0);
+  WritePin(TEST_PIN_B, 0);
+  Delay(1);
+
+  auto onPinISR = [&isrCount](DigitalSensor &sensor, bool updated)
+  {
+    ++isrCount;
+  };
+
+  uint32_t refreshRate(10);
+  DigitalSensor pinA(refreshRate);
+  pinA.SetPolarity(DigitalSensor::Toggle);
+  pinA.SetPostISRCB(onPinISR);
+  pinA.SetPin(TEST_PIN_A, pullDown);
+  pinA.EnableInterrupts(true);
+
+  Delay(1);
+
+  int count = 10;
+  for (int i = 0 ; i < count ; ++i)
+  {
+    WritePin(TEST_PIN_B, 1);
+    Delay(1);
+    WritePin(TEST_PIN_B, 0);
+    Delay(1);
+  };
+  
+  TEST_CASE_VALUE_INT32("DigitalSensor, Toggle", isrCount, count * 2, count * 2);
+}
+
+
+void TestDigitalSensorRise()
+{
+  int32_t pullDown = -1;
+  int32_t pullUp = 1;
+  int32_t isrCount = 0;
+
+  bool testPinBIsInput = false;
+  SetupPin(TEST_PIN_B, testPinBIsInput, 0);
+  WritePin(TEST_PIN_B, 0);
+  Delay(1);
+
+  auto onPinISR = [&isrCount](DigitalSensor &sensor, bool updated)
+  {
+    ++isrCount;
+  };
+
+  uint32_t refreshRate(10);
+  DigitalSensor pinA(refreshRate);
+  pinA.SetPolarity(DigitalSensor::Rise);
+  pinA.SetPostISRCB(onPinISR);
+  pinA.SetPin(TEST_PIN_A, pullDown);
+  pinA.EnableInterrupts(true);
+
+  Delay(1);
+
+  int count = 10;
+  for (int i = 0 ; i < count ; ++i)
+  {
+    WritePin(TEST_PIN_B, 1);
+    Delay(1);
+    WritePin(TEST_PIN_B, 0);
+    Delay(1);
+  };
+  
+  TEST_CASE_VALUE_INT32("DigitalSensor, Rise", isrCount, count, count);
+}
+
+
+void TestDigitalSensorFall()
+{
+  int32_t pullDown = -1;
+  int32_t pullUp = 1;
+  int32_t isrCount = 0;
+
+  bool testPinBIsInput = false;
+  SetupPin(TEST_PIN_B, testPinBIsInput, 0);
+  WritePin(TEST_PIN_B, 0);
+  Delay(1);
+
+  auto onPinISR = [&isrCount](DigitalSensor &sensor, bool updated)
+  {
+    ++isrCount;
+  };
+
+  uint32_t refreshRate(10);
+  DigitalSensor pinA(refreshRate);
+  pinA.SetPolarity(DigitalSensor::Fall);
+  pinA.SetPostISRCB(onPinISR);
+  pinA.SetPin(TEST_PIN_A, pullDown);
+  pinA.EnableInterrupts(true);
+
+  Delay(1);
+
+  int count = 10;
+  for (int i = 0 ; i < count ; ++i)
+  {
+    WritePin(TEST_PIN_B, 1);
+    Delay(1);
+    WritePin(TEST_PIN_B, 0);
+    Delay(1);
+  };
+  
+  TEST_CASE_VALUE_INT32("DigitalSensor, Fall", isrCount, count, count);
+}
+
+
+void TestDigitalSensorPolarityChange()
+{
+  int32_t pullDown = -1;
+  int32_t pullUp = 1;
+  int32_t isrCount = 0;
+
+  bool testPinBIsInput = false;
+  SetupPin(TEST_PIN_B, testPinBIsInput, 0);
+  WritePin(TEST_PIN_B, 1);
+  Delay(1);
+
+  auto onPinISR = [&isrCount](DigitalSensor &sensor, bool updated)
+  {
+    ++isrCount;
+  };
+
+  uint32_t refreshRate(10);
+  DigitalSensor pinA(refreshRate);
+  pinA.SetPolarity(DigitalSensor::Fall);
+  pinA.SetPostISRCB(onPinISR);
+  pinA.SetPin(TEST_PIN_A, pullDown);
+  pinA.EnableInterrupts(true);
+
+  //change polarity
+  pinA.SetPolarity(DigitalSensor::Rise);
+
+  WritePin(TEST_PIN_B, 0);
+  Delay(1);
+  
+  TEST_CASE_VALUE_INT32("DigitalSensor, PolarityChange, Fall", isrCount, 0, 0);
+
+  WritePin(TEST_PIN_B, 1);
+  Delay(1);
+  
+  TEST_CASE_VALUE_INT32("DigitalSensor, PolarityChange, Rise", isrCount, 1, 1);
+}
+
 
 void TestPins()
 {
@@ -204,4 +355,8 @@ void TestPins()
   TestDigitalSensorAutoToggleCB();
   TestVDDAdc();
   TestAdc();
+  TestDigitalSensorToggle();
+  TestDigitalSensorRise();
+  TestDigitalSensorFall();
+  TestDigitalSensorPolarityChange();
 }
