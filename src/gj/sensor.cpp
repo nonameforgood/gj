@@ -211,6 +211,11 @@ void DigitalSensor::SetPolarity(Polarity polarity)
     SetPin(GetPin(), m_pull);
 }
 
+DigitalSensor::Polarity DigitalSensor::GetPolarity() const
+{
+  return m_polarity;
+}
+
 //Anything called from interrupt routine must be IRAM_ATTR.
 //IRAM_ATTR needed because interrupt calls bypasses i-cache loads
 // https://github.com/espressif/arduino-esp32/issues/954
