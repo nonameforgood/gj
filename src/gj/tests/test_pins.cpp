@@ -214,7 +214,7 @@ void TestDigitalSensorToggle()
 
   uint32_t refreshRate(10);
   DigitalSensor pinA(refreshRate);
-  pinA.m_polarity = DigitalSensor::Toggle;
+  pinA.SetPolarity(DigitalSensor::Toggle);
   pinA.SetPostISRCB(onPinISR);
   pinA.SetPin(TEST_PIN_A, pullDown);
   pinA.EnableInterrupts(true);
@@ -252,7 +252,7 @@ void TestDigitalSensorRise()
 
   uint32_t refreshRate(10);
   DigitalSensor pinA(refreshRate);
-  pinA.m_polarity = DigitalSensor::Rise;
+  pinA.SetPolarity(DigitalSensor::Rise);
   pinA.SetPostISRCB(onPinISR);
   pinA.SetPin(TEST_PIN_A, pullDown);
   pinA.EnableInterrupts(true);
@@ -290,7 +290,7 @@ void TestDigitalSensorFall()
 
   uint32_t refreshRate(10);
   DigitalSensor pinA(refreshRate);
-  pinA.m_polarity = DigitalSensor::Fall;
+  pinA.SetPolarity(DigitalSensor::Fall);
   pinA.SetPostISRCB(onPinISR);
   pinA.SetPin(TEST_PIN_A, pullDown);
   pinA.EnableInterrupts(true);
@@ -309,6 +309,45 @@ void TestDigitalSensorFall()
   TEST_CASE_VALUE_INT32("DigitalSensor, Fall", isrCount, count, count);
 }
 
+
+void TestDigitalSensorPolarityChange()
+{
+  int32_t pullDown = -1;
+  int32_t pullUp = 1;
+  int32_t isrCount = 0;
+
+  bool testPinBIsInput = false;
+  SetupPin(TEST_PIN_B, testPinBIsInput, 0);
+  WritePin(TEST_PIN_B, 1);
+  Delay(1);
+
+  auto onPinISR = [&isrCount](DigitalSensor &sensor, bool updated)
+  {
+    ++isrCount;
+  };
+
+  uint32_t refreshRate(10);
+  DigitalSensor pinA(refreshRate);
+  pinA.SetPolarity(DigitalSensor::Fall);
+  pinA.SetPostISRCB(onPinISR);
+  pinA.SetPin(TEST_PIN_A, pullDown);
+  pinA.EnableInterrupts(true);
+
+  //change polarity
+  pinA.SetPolarity(DigitalSensor::Rise);
+
+  WritePin(TEST_PIN_B, 0);
+  Delay(1);
+  
+  TEST_CASE_VALUE_INT32("DigitalSensor, PolarityChange, Fall", isrCount, 0, 0);
+
+  WritePin(TEST_PIN_B, 1);
+  Delay(1);
+  
+  TEST_CASE_VALUE_INT32("DigitalSensor, PolarityChange, Rise", isrCount, 1, 1);
+}
+
+
 void TestPins()
 {
   TestInputPins();
@@ -319,4 +358,5 @@ void TestPins()
   TestDigitalSensorToggle();
   TestDigitalSensorRise();
   TestDigitalSensorFall();
+  TestDigitalSensorPolarityChange();
 }

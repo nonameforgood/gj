@@ -207,7 +207,8 @@ void DigitalSensor::SetPin(uint16_t pin, int32_t pull)
 void DigitalSensor::SetPolarity(Polarity polarity)
 {
   m_polarity = polarity;
-  SetPin(GetPin(), m_pull);
+  if (GetPin() != 0)
+    SetPin(GetPin(), m_pull);
 }
 
 //Anything called from interrupt routine must be IRAM_ATTR.
