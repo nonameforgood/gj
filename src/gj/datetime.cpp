@@ -57,7 +57,12 @@ int32_t GetUnixtime()
   return nowUnix;
 }
 
-
+int32_t GetLocalUnixtime()
+{
+  int32_t time = GetUnixtime();
+  time += GJ_CONF_INT32_VALUE(tz);
+  return time;
+}
 
 int32_t GetEpoch( const char *dateTime )
 {
@@ -462,7 +467,7 @@ void InitializeDateTime(OnlineDateUpdater updateFunc)
       LOG("Init unixtime to %d from build date '%s'", unixtime, __DATE__);
 #else
       //use some arbitrary unixtime
-      unixtime = (int32_t)1676387543; //(2023-02-14T11:12:23) 
+      unixtime = (int32_t)1676332800; //(2023-02-14T00:00:00) 
 
       SER("Init unixtime to %d '%s'", unixtime, "(2023-02-14T11:12:23)");
 #endif
