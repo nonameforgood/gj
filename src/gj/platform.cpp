@@ -307,8 +307,8 @@ void InitPlatformTimer()
   }
 
   //RTC1 requires a CLK source (high or low frequency), use the low freq one to use less power
-  if (!nrf_drv_clock_lfclk_is_running())
-    nrf_drv_clock_lfclk_request(NULL);
+  //must always call nrf_drv_clock_lfclk_request to keep a ref count on lfclk
+  nrf_drv_clock_lfclk_request(NULL);
 
   s_platformTimer.m_init = true;
 
