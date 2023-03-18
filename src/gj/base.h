@@ -44,7 +44,7 @@ typedef uint8_t U8;
 #include "profiling.h"
 #include "function_ref.hpp"
 
-#define GJ_ASSERT( cond, format, ... ) if (!(cond)) { GJ_ERROR(format, ##__VA_ARGS__ ); delay(3000);exit(0); }
+#define GJ_ASSERT( cond, format, ... ) if (!(cond)) { GJ_ERROR(format, ##__VA_ARGS__ ); Delay(3000);exit(0); }
 
 extern bool enableLog;
 
