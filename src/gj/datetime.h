@@ -14,6 +14,7 @@ void UpdateTimeOnline();
 void PrepareDateTimeSleep();
 
 int32_t GetUnixtime();
+int32_t GetLocalUnixtime();
 void SetUnixtime(uint32_t unixtime);
 
 void ConvertEpoch(int32_t epoch, char *dateTime);
