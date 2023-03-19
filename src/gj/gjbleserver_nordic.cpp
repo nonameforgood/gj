@@ -1123,6 +1123,11 @@ void GJBLEServer::SetupAdvertising(const uint8_t* manufUserData, uint32_t manufS
   #endif
 }
 
+bool GJBLEServer::IsInit() const
+{
+  return m_init;
+}
+
 bool GJBLEServer::Init(const char *hostname, GJOTA *ota)
 {
   m_hostname = hostname;
