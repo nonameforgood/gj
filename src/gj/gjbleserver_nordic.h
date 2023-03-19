@@ -29,6 +29,7 @@ public:
   void RegisterTerminalHandler();
   bool Init(const char *hostname, GJOTA *ota = nullptr);
   void Term();
+  bool IsInit() const;
 
   void Update();
   bool Broadcast(const char *text);
