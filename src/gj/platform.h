@@ -44,8 +44,6 @@ void RestorePinConf(uint32_t pin, uint32_t conf);
   
 
 #elif defined(NRF)
-  #include <app_timer.h>
-
   #define GJ_PERSISTENT
   #define GJ_PERSISTENT_NO_INIT
   #define GJ_IRAM
