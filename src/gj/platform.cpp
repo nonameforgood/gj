@@ -239,8 +239,8 @@ struct PlatformTimer
 {
   bool m_init = false;
   uint32_t m_period = 30;
-  uint32_t m_cumulMicros = 0;
   uint32_t m_base = 0;
+  uint64_t m_cumulMicros = 0;
 };
 
 static PlatformTimer s_platformTimer;
@@ -255,9 +255,10 @@ static uint64_t GetElapsedMicrosInternal()
   else
     rtcElapsed = 0xffffff - s_platformTimer.m_base + counter;
 
-  uint64_t mc  = ((uint64_t)rtcElapsed * 1000 * 1000) / APP_TIMER_CLOCK_FREQ;
+  const uint64_t toMicros = 1000 * 1000;
+  uint64_t mc  = (rtcElapsed * toMicros) / APP_TIMER_CLOCK_FREQ;
 
-  mc += (uint64_t)s_platformTimer.m_cumulMicros;
+  mc += s_platformTimer.m_cumulMicros;
 
   return mc;
 }
@@ -321,6 +322,7 @@ void InitPlatformTimer()
   const uint32_t ticks = APP_TIMER_TICKS(delayMS, 0);
   app_timer_start(PLATFORM_Timer, ticks, nullptr);
 
+  //make sure app_timer started rtc1
   GJ_ASSERT(NRF_RTC1->EVTENSET & RTC_EVTEN_COMPARE0_Msk, "RTC1 not started");
 }
 
