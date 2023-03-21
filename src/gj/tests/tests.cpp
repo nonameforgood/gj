@@ -7,6 +7,7 @@ void TestCommands();
 void TestConfig();
 void TestAppendOnlyFile();
 void TestEventManager();
+void TestDatetime();
 
 static int32_t s_testCount = 0;
 static int32_t s_failCount = 0; 
@@ -27,6 +28,7 @@ void TestGJ()
   TestConfig();
   TestAppendOnlyFile();
   TestEventManager();
+  TestDatetime();
   
   SER("All test finished: Success %d/%d\n", s_testCount - s_failCount, s_testCount);
 }
