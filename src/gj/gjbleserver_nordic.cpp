@@ -11,6 +11,7 @@
 #include "gj/eventmanager.h"
 #include "gj/gjota.h"
 #include "gj/nrf51utils.h"
+#include <app_timer.h>
 
 #include <cctype>  //isprint
 

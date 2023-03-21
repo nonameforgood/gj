@@ -106,6 +106,11 @@ void WriteLastDateFile(int32_t unixtime)
 #if defined(GJ_DATE_USE_APPEND_ONLY_FILE)
   AppendOnlyFile file("/lastdate");
 
+  if (!file.IsValid())
+  {
+    return;
+  }
+
   if (!file.BeginWrite(4))
   {
     file.Erase();

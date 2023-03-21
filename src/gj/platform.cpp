@@ -87,6 +87,7 @@ void RestorePinConf(uint16_t pin, uint32_t conf)
 #include <nrf_delay.h>
 #include <nrf_gpio.h>
 #include <nrf_drv_clock.h>
+#include <app_timer.h>
 
 
 
@@ -237,13 +238,12 @@ APP_TIMER_DEF(PLATFORM_Timer);
 struct PlatformTimer
 {
   bool m_init = false;
-  uint32_t m_period = 5;
-  uint32_t m_cumulSeconds = 0;
+  uint32_t m_period = 30;
   uint32_t m_base = 0;
+  uint64_t m_cumulMicros = 0;
 };
 
 static PlatformTimer s_platformTimer;
-
 
 static uint64_t GetElapsedMicrosInternal()
 {
@@ -255,20 +255,20 @@ static uint64_t GetElapsedMicrosInternal()
   else
     rtcElapsed = 0xffffff - s_platformTimer.m_base + counter;
 
-  uint64_t mc  = ((uint64_t)rtcElapsed * 1000 * 1000) / APP_TIMER_CLOCK_FREQ;
+  const uint64_t toMicros = 1000 * 1000;
+  uint64_t mc  = (rtcElapsed * toMicros) / APP_TIMER_CLOCK_FREQ;
 
-  mc += (uint64_t)s_platformTimer.m_cumulSeconds * 1000 * 1000;
+  mc += s_platformTimer.m_cumulMicros;
 
   return mc;
 }
 
-
 static void PlatformTimerHandler(void *context)
 {
-  uint32_t counter = app_timer_cnt_get();
+  const uint32_t counter = app_timer_cnt_get();
   uint32_t elapsed;
 
-  if (counter > s_platformTimer.m_base)
+  if (counter >= s_platformTimer.m_base)
     elapsed = counter - s_platformTimer.m_base;
   else
     elapsed = 0xffffff - s_platformTimer.m_base + counter;
@@ -277,16 +277,17 @@ static void PlatformTimerHandler(void *context)
 
   elapsed -= secondsElapsed * APP_TIMER_CLOCK_FREQ;
   
-  uint32_t cumulBef = s_platformTimer.m_cumulSeconds;
-  uint32_t baseBef = s_platformTimer.m_base;
+  const uint64_t cumulBef = s_platformTimer.m_cumulMicros;
+  const uint32_t baseBef = s_platformTimer.m_base;
 
+  const uint64_t toMicros = 1000 * 1000;
   s_platformTimer.m_base = (counter - elapsed) & 0xffffff;
-  s_platformTimer.m_cumulSeconds += secondsElapsed;
+  s_platformTimer.m_cumulMicros += secondsElapsed * toMicros;
 
-  if (s_platformTimer.m_cumulSeconds < cumulBef)
+  if (s_platformTimer.m_cumulMicros < cumulBef)
     printf("PlatformTimerHandler elapsed:%d counter:%d baseBef:%d cumulBef:%d new base:%d new cumul:%d\n\r", 
       (uint32_t)(GetElapsedMicrosInternal() / 1000000), counter, baseBef, cumulBef,
-      s_platformTimer.m_base, s_platformTimer.m_cumulSeconds);
+      s_platformTimer.m_base, (uint32_t)(s_platformTimer.m_cumulMicros / toMicros));
 }
 
 bool IsLFClockAvailable()
@@ -320,6 +321,9 @@ void InitPlatformTimer()
   const uint32_t delayMS = s_platformTimer.m_period * 1000;
   const uint32_t ticks = APP_TIMER_TICKS(delayMS, 0);
   app_timer_start(PLATFORM_Timer, ticks, nullptr);
+
+  //make sure app_timer started rtc1
+  GJ_ASSERT(NRF_RTC1->EVTENSET & RTC_EVTEN_COMPARE0_Msk, "RTC1 not started");
 }
 
 
