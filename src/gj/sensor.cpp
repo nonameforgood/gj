@@ -125,11 +125,6 @@ void DigitalSensor::EnableInterrupts(bool enable)
 
   const int32_t pin = GetPin();
 
-  int32_t err_code = nrf_drv_gpiote_in_init(pin, &cfg, InterruptHandler);
-  APP_ERROR_CHECK(err_code);
-
-  nrf_drv_gpiote_in_event_enable(pin, false);
-
   int8_t remap = s_remap[pin];
 
   if (s_remap[pin] == 255)
@@ -153,6 +148,17 @@ void DigitalSensor::EnableInterrupts(bool enable)
     s_remap[pin] = remap;
     s_sensors[remap] = this;
   }
+
+  int32_t err_code = nrf_drv_gpiote_in_init(pin, &cfg, InterruptHandler);
+  APP_ERROR_CHECK(err_code);
+
+  //The hardware does not have a mechanism to actually detect Rise and Fall
+  //It only detects low or high.
+  //In Rise mode, an interrupt will occur if the pin is already high during this setup
+  //In Fall mode, an interrupt will occur if the pin is already low during this setup
+  //This interrupt is unwanted.
+
+  nrf_drv_gpiote_in_event_enable(pin, false);
 
 #endif
   }
