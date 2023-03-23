@@ -295,8 +295,6 @@ void TestDigitalSensorFall()
   pinA.SetPin(TEST_PIN_A, pullDown);
   pinA.EnableInterrupts(true);
 
-  Delay(1);
-
   int count = 10;
   for (int i = 0 ; i < count ; ++i)
   {
@@ -344,7 +342,7 @@ void TestDigitalSensorPolarityChange()
 
   TEST_CASE_VALUE_INT32("DigitalSensor, PolarityChange, Rise, LOW", isrCount, 1, 1);
   WritePin(TEST_PIN_B, 1);
-  Delay(1);
+  Delay(10);
   
   TEST_CASE_VALUE_INT32("DigitalSensor, PolarityChange, Rise, HIGH", isrCount, 2, 2);
 }
