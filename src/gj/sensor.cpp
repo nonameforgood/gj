@@ -97,7 +97,19 @@ void DigitalSensor::EnableInterrupts(bool enable)
 {
   if (enable && !m_enableInterrupts)
   {
-#if defined(NRF)
+    const int32_t pin = GetPin();
+    
+#ifdef ESP32
+  int32_t polarity;
+  if (m_polarity == Toggle)
+    polarity = CHANGE;
+  else if (m_polarity == Rise)
+    polarity = RISING;
+  else
+    polarity = FALLING;
+  attachInterruptArg(digitalPinToInterrupt(pin), InterruptHandler, this, polarity);
+  
+#elif defined(NRF)
     InitGPIOTE();
 
     nrf_gpiote_polarity_t polarity;
@@ -123,12 +135,7 @@ void DigitalSensor::EnableInterrupts(bool enable)
     hi_accuracy
   };
 
-  const int32_t pin = GetPin();
-
-  int32_t err_code = nrf_drv_gpiote_in_init(pin, &cfg, InterruptHandler);
-  APP_ERROR_CHECK(err_code);
-
-  nrf_drv_gpiote_in_event_enable(pin, false);
+  
 
   int8_t remap = s_remap[pin];
 
@@ -154,13 +161,26 @@ void DigitalSensor::EnableInterrupts(bool enable)
     s_sensors[remap] = this;
   }
 
+  int32_t err_code = nrf_drv_gpiote_in_init(pin, &cfg, InterruptHandler);
+  APP_ERROR_CHECK(err_code);
+
+  //The hardware does not have a mechanism to actually detect Rise and Fall
+  //It only detects low or high.
+  //In Rise mode, an interrupt will occur if the pin is already high during this setup
+  //In Fall mode, an interrupt will occur if the pin is already low during this setup
+  //This interrupt is unwanted.
+
+  nrf_drv_gpiote_in_event_enable(pin, false);
+
 #endif
   }
   else if (!enable && m_enableInterrupts)
   {
-    #if defined(NRF)
-      const int32_t pin = GetPin();
+    const int32_t pin = GetPin();
 
+    #ifdef ESP32
+      detachInterrupt(digitalPinToInterrupt(pin));
+    #elif defined(NRF)
       nrf_drv_gpiote_in_event_disable(pin);
 
       if (s_remap[pin] != 255)
@@ -187,21 +207,13 @@ void DigitalSensor::SetPin(uint16_t pin, int32_t pull)
 
 #ifdef ESP32
   UpdateValue();
-  int32_t polarity;
-  if (m_polarity == Toggle)
-    polarity = CHANGE;
-  else if (m_polarity == Rise)
-    polarity = RISING;
-  else
-    polarity = FALLING;
-  attachInterruptArg(digitalPinToInterrupt(pin), InterruptHandler, this, polarity);
-#elif defined(NRF)
-  if (m_enableInterrupts)
+#endif
+
+if (m_enableInterrupts)
   {
     EnableInterrupts(false);
     EnableInterrupts(true);
   }
-#endif
 }
 
 void DigitalSensor::SetPolarity(Polarity polarity)

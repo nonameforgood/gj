@@ -36,7 +36,7 @@ void TestInputPins()
     Delay(100);
     WritePin(TEST_PIN_B, 1);
     Delay(100);
-    TEST_CASE("Pin Input Pull down, HIGH, LOW, HIGH", s_testPinEventCount == 3);
+    TEST_CASE_VALUE_INT32("Pin Input Pull down, HIGH, LOW, HIGH", s_testPinEventCount, 3, 3);
     s_testPinEventCount = 0;
 
 
@@ -280,7 +280,7 @@ void TestDigitalSensorFall()
 
   bool testPinBIsInput = false;
   SetupPin(TEST_PIN_B, testPinBIsInput, 0);
-  WritePin(TEST_PIN_B, 0);
+  WritePin(TEST_PIN_B, 1);
   Delay(1);
 
   auto onPinISR = [&isrCount](DigitalSensor &sensor, bool updated)
@@ -295,15 +295,13 @@ void TestDigitalSensorFall()
   pinA.SetPin(TEST_PIN_A, pullDown);
   pinA.EnableInterrupts(true);
 
-  Delay(1);
-
   int count = 10;
   for (int i = 0 ; i < count ; ++i)
   {
-    WritePin(TEST_PIN_B, 1);
-    Delay(1);
     WritePin(TEST_PIN_B, 0);
-    Delay(1);
+    Delay(12);
+    WritePin(TEST_PIN_B, 1);
+    Delay(12);
   };
   
   TEST_CASE_VALUE_INT32("DigitalSensor, Fall", isrCount, count, count);
@@ -319,7 +317,6 @@ void TestDigitalSensorPolarityChange()
   bool testPinBIsInput = false;
   SetupPin(TEST_PIN_B, testPinBIsInput, 0);
   WritePin(TEST_PIN_B, 1);
-  Delay(1);
 
   auto onPinISR = [&isrCount](DigitalSensor &sensor, bool updated)
   {
@@ -333,18 +330,21 @@ void TestDigitalSensorPolarityChange()
   pinA.SetPin(TEST_PIN_A, pullDown);
   pinA.EnableInterrupts(true);
 
-  //change polarity
-  pinA.SetPolarity(DigitalSensor::Rise);
+  TEST_CASE_VALUE_INT32("DigitalSensor, PolarityChange, Fall, HIGH", isrCount, 0, 0);
 
   WritePin(TEST_PIN_B, 0);
   Delay(1);
-  
-  TEST_CASE_VALUE_INT32("DigitalSensor, PolarityChange, Fall", isrCount, 0, 0);
 
+  TEST_CASE_VALUE_INT32("DigitalSensor, PolarityChange, Fall, LOW", isrCount, 1, 1);
+
+  //change polarity
+  pinA.SetPolarity(DigitalSensor::Rise);
+
+  TEST_CASE_VALUE_INT32("DigitalSensor, PolarityChange, Rise, LOW", isrCount, 1, 1);
   WritePin(TEST_PIN_B, 1);
-  Delay(1);
+  Delay(10);
   
-  TEST_CASE_VALUE_INT32("DigitalSensor, PolarityChange, Rise", isrCount, 1, 1);
+  TEST_CASE_VALUE_INT32("DigitalSensor, PolarityChange, Rise, HIGH", isrCount, 2, 2);
 }
 
 
