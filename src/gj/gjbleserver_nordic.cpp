@@ -1561,15 +1561,9 @@ void GJBLEServer::SendNextHelpCommand(SendHelpCommand *helpCommand)
     GJEventManager->Add(func);
   }
 };
-  
-uint32_t GetPartitionIndex();
 
 void GJBLEServer::SendHelp(BLEClient &client, uint16_t gatts_if, uint16_t descr_handle)
 {
-  LogRam();
-
-  SER("Running partition %d\n\r", GetPartitionIndex());
-
   SendHelpCommand *helpCommand = new SendHelpCommand;
 
   helpCommand->client = &client;
