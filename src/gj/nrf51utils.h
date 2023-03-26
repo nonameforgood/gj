@@ -69,7 +69,7 @@ struct FileSectorsDef
 const FileSectorsDef* GetFileSectorDef(const char *path);
 
 
-void InitSoftDevice();
+void InitSoftDevice(uint32_t centralLinks, uint32_t periphLinks);
 void InitFStorage();
 
 void InitMultiboot();

@@ -35,8 +35,6 @@
 #include <ble_advertising.h>
 #include <ble_conn_params.h>
 #include <ble_hci.h>
-#include <ble_advdata.h>
-#include <ble_advertising.h>
 #include <ble_conn_state.h>
 
 
@@ -195,9 +193,6 @@ void SerConnParam(const ble_gap_conn_params_t &conn_params)
 #define GATTS_CHAR_UUID_TEST_B      0xEE01
 #define GATTS_DESCR_UUID_TEST_B     0x2222
 
-
-#define CENTRAL_LINK_COUNT              0                                           /**< Number of central links used by the application. When changing this number remember to adjust the RAM settings*/
-#define PERIPHERAL_LINK_COUNT           1                                           /**< Number of peripheral links used by the application. When changing this number remember to adjust the RAM settings*/
 
 #define MIN_CONN_INTERVAL               MSEC_TO_UNITS(8, UNIT_1_25_MS)            /**< Minimum acceptable connection interval (0.1 seconds). */
 #define MAX_CONN_INTERVAL               MSEC_TO_UNITS(200, UNIT_1_25_MS)            /**< Maximum acceptable connection interval (0.2 second). */
@@ -1230,10 +1225,6 @@ void GJBLEServer::Command_bleint(const CommandInfo &info)
 
 DEFINE_COMMAND_ARGS(ble, GJBLEServer::Command_ble);
 
-#if defined(NRF_SDK12)
-extern sys_evt_handler_t g_sys_evt_handler;
-#endif
-
 void GJBLEServer::OnExit()
 {
   if (ms_instance)
@@ -1274,36 +1265,13 @@ bool GJBLEServer::Init()
 
   if (!m_init)
   {
+    GJ_ASSERT(softdevice_handler_is_enabled(), "Soft device is not enabled");
+
     uint32_t err_code;
 
-    InitSoftDevice();
-    
-    ble_enable_params_t ble_enable_params;
-    err_code = softdevice_enable_get_default_config(CENTRAL_LINK_COUNT,
-                                                    PERIPHERAL_LINK_COUNT,
-                                                    &ble_enable_params);
-    GJ_CHECK_ERROR(err_code);
-
-    // Check the ram settings against the used number of links
-    CHECK_RAM_START_ADDR(CENTRAL_LINK_COUNT, PERIPHERAL_LINK_COUNT);
-
-    // Enable BLE stack.
-#if (NRF_SD_BLE_API_VERSION == 3) && false
-    ble_enable_params.gatt_enable_params.att_mtu = NRF_BLE_MAX_MTU_SIZE;
-#endif
-    err_code = softdevice_enable(&ble_enable_params);
-    GJ_CHECK_ERROR(err_code);
-
-    // Register with the SoftDevice handler module for BLE events.
+  // Register with the SoftDevice handler module for BLE events.
     err_code = softdevice_ble_evt_handler_set(OnBLEEvent);
     GJ_CHECK_ERROR(err_code);
-
-#if defined(NRF_SDK12)
-    // Overwrite existing sys handler if any
-    g_sys_evt_handler = sys_evt_dispatch;
-    err_code = softdevice_sys_evt_handler_set(g_sys_evt_handler);
-    GJ_CHECK_ERROR(err_code);
-#endif
 
     ble_gap_conn_params_t   gap_conn_params;
     ble_gap_conn_sec_mode_t sec_mode;
@@ -1411,10 +1379,6 @@ void GJBLEServer::Term()
   if (m_init)
   {    
     sd_ble_gap_adv_stop();
-
-  
-    softdevice_handler_sd_disable();
-
     m_init = false;
   }
 
