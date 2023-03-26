@@ -59,6 +59,7 @@ private:
   struct DataBuffer;
 
   bool m_init = false;
+  bool m_bleInit = false;
   uint32_t m_terminalIndex = -1;
   GJOTA *m_ota = nullptr;
   GJString m_hostname;

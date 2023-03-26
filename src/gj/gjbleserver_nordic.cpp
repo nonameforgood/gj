@@ -1262,12 +1262,21 @@ bool GJBLEServer::Init()
     //REFERENCE_COMMAND("blesendlog", sendWBLog);
   }
 
+  uint32_t err_code;
+  
+  m_adv_uuids[0] = {GATTS_SERVICE_UUID_TEST_A, BLE_UUID_TYPE_BLE};
+    m_adv_uuids[1] = {GATTS_SERVICE_UUID_TEST_B, BLE_UUID_TYPE_BLE}; 
 
-  if (!m_init)
+    //uint8_t addl_adv_manuf_data[] = {0x02, 0x01, 0x06, 0x02, 0x0a, 0x03, 0x08, 0xFF, 0x11, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05};   
+    
+    //SetAdvManufData(addl_adv_manuf_data, sizeof(addl_adv_manuf_data));
+
+    
+    
+
+  if (!m_bleInit)
   {
     GJ_ASSERT(softdevice_handler_is_enabled(), "Soft device is not enabled");
-
-    uint32_t err_code;
 
   // Register with the SoftDevice handler module for BLE events.
     err_code = softdevice_ble_evt_handler_set(OnBLEEvent);
@@ -1293,17 +1302,7 @@ bool GJBLEServer::Init()
     err_code = sd_ble_gap_ppcp_set(&gap_conn_params);
     GJ_CHECK_ERROR(err_code);
 
-    m_adv_uuids[0] = {GATTS_SERVICE_UUID_TEST_A, BLE_UUID_TYPE_BLE};
-    m_adv_uuids[1] = {GATTS_SERVICE_UUID_TEST_B, BLE_UUID_TYPE_BLE}; 
-
-    //uint8_t addl_adv_manuf_data[] = {0x02, 0x01, 0x06, 0x02, 0x0a, 0x03, 0x08, 0xFF, 0x11, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05};   
     
-    //SetAdvManufData(addl_adv_manuf_data, sizeof(addl_adv_manuf_data));
-
-    
-    
-    SetupAdvertising(addl_adv_manuf_data, sizeof(addl_adv_manuf_data));
-    SetAdvManufData(addl_adv_manuf_data, sizeof(addl_adv_manuf_data));
 
     err_code = sd_ble_gatts_service_add(BLE_GATTS_SRVC_TYPE_PRIMARY, &m_adv_uuids[0], &m_service_handle[0]);
     GJ_CHECK_ERROR(err_code);
@@ -1317,7 +1316,18 @@ bool GJBLEServer::Init()
 
     conn_params_init();
 
+    //uint8_t addl_adv_manuf_data[] = {0x04, 0xFF, 0x11, 0x12, 0x13};   
+    //SetAdvManufData(addl_adv_manuf_data, sizeof(addl_adv_manuf_data));
+
+    ms_instance = this;
     
+    m_bleInit = true;
+  }
+
+
+    SetupAdvertising(addl_adv_manuf_data, sizeof(addl_adv_manuf_data));
+    SetAdvManufData(addl_adv_manuf_data, sizeof(addl_adv_manuf_data));
+
 #if defined(NRF_SDK12)
     err_code = ble_advertising_start(BLE_ADV_MODE_FAST);
     APP_ERROR_CHECK(err_code);
@@ -1325,14 +1335,6 @@ bool GJBLEServer::Init()
     err_code = ble_advertising_start(&m_advertising, BLE_ADV_MODE_FAST);
     APP_ERROR_CHECK(err_code);
 #endif
-
-    //uint8_t addl_adv_manuf_data[] = {0x04, 0xFF, 0x11, 0x12, 0x13};   
-    //SetAdvManufData(addl_adv_manuf_data, sizeof(addl_adv_manuf_data));
-
-    ms_instance = this;
-    
-    m_init = true;
-  }
 
   BLE_DBG_PRINT(3, "BLE Server initialized\n");
 
@@ -1345,6 +1347,8 @@ bool GJBLEServer::Init()
 
   SER("BLE addr %02X:%02X:%02X:%02X:%02X:%02X\n\r", localAddr.addr[0], localAddr.addr[1], localAddr.addr[2],
     localAddr.addr[3], localAddr.addr[4], localAddr.addr[5]);
+
+  m_init = true;
 
   return m_init;
 }
@@ -1379,6 +1383,7 @@ void GJBLEServer::Term()
   if (m_init)
   {    
     sd_ble_gap_adv_stop();
+
     m_init = false;
   }
 
