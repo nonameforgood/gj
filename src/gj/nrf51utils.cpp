@@ -4,7 +4,7 @@
 #include "appendonlyfile.h"
 #include <boards.h> 
 #include <nrf_drv_clock.h>
-
+#include <ble_advertising.h>
 
 #if defined(NRF_SDK12)
   #include <fstorage.h>
@@ -37,8 +37,6 @@ GJ_FS_REGISTER_CFG(fs_config_t fsConfig) =
     .num_pages = 1,      // Number of physical flash pages required.
     .priority  = 0xFE            // Priority for flash usage.
 };
-
-sys_evt_handler_t g_sys_evt_handler = nullptr;
 
 void EraseSector(uint32_t byteOffset, uint32_t count)
 {
@@ -80,6 +78,21 @@ bool IsFlashIdle()
   return fs_queue_is_empty();
 }
 
+void sys_evt_dispatch(uint32_t sys_evt)
+{
+#if defined(NRF_SDK12)
+    // Dispatch the system event to the fstorage module, where it will be
+    // dispatched to the Flash Data Storage (FDS) module.
+    fs_sys_event_handler(sys_evt);
+
+
+    // Dispatch to the Advertising module last, since it will check if there are any
+    // pending flash operations in fstorage. Let fstorage process system events first,
+    // so that it can report correctly to the Advertising module.
+    ble_advertising_on_sys_evt(sys_evt);
+#endif
+}
+
 void ExecuteSystemEvents()
 {
   for (;;)
@@ -103,13 +116,8 @@ void ExecuteSystemEvents()
           // Call application's SOC event handler.
 #if (NRF_MODULE_ENABLED(CLOCK) && defined(SOFTDEVICE_PRESENT))
           nrf_drv_clock_on_soc_event(evt_id);
-          if (g_sys_evt_handler)
-          {
-              g_sys_evt_handler(evt_id);
-          }
-#else
-          g_sys_evt_handler(evt_id);
 #endif
+        sys_evt_dispatch(evt_id);
       }
   }
 }
@@ -346,7 +354,8 @@ static uint32_t SD_IRQHandler (void)
   return NRF_SUCCESS;
 }
 
-void InitSoftDevice()
+
+void InitSoftDevice(uint32_t centralLinks, uint32_t periphLinks)
 {
   if (softdevice_handler_is_enabled())
     return;
@@ -355,6 +364,29 @@ void InitSoftDevice()
 
   // Initialize the SoftDevice handler module.
   SOFTDEVICE_HANDLER_INIT(&clock_lf_cfg, SD_IRQHandler);
+
+  uint32_t err_code;
+
+  ble_enable_params_t ble_enable_params;
+  err_code = softdevice_enable_get_default_config(centralLinks,
+                                                  periphLinks,
+                                                  &ble_enable_params);
+  APP_ERROR_CHECK(err_code);
+
+  // Check the ram settings against the used number of links
+  CHECK_RAM_START_ADDR(centralLinks, periphLinks);
+
+  // Enable BLE stack.
+#if (NRF_SD_BLE_API_VERSION == 3) && false
+  ble_enable_params.gatt_enable_params.att_mtu = NRF_BLE_MAX_MTU_SIZE;
+#endif
+  err_code = softdevice_enable(&ble_enable_params);
+  APP_ERROR_CHECK(err_code);
+
+#if defined(NRF_SDK12)
+  err_code = softdevice_sys_evt_handler_set(sys_evt_dispatch);
+  APP_ERROR_CHECK(err_code);
+#endif
 }
 
 static bool s_fsInit = false; 
@@ -381,18 +413,7 @@ void InitFStorage()
   };
   memcpy(&fsConfig, &fsConfig2, sizeof(fsConfig));
 
-  fs_init();
-
-  InitSoftDevice();
-
-  int32_t err_code;
-  if (g_sys_evt_handler == nullptr)
-  {
-    g_sys_evt_handler = fs_sys_event_handler;
-    err_code = softdevice_sys_evt_handler_set(g_sys_evt_handler);
-    APP_ERROR_CHECK(err_code);
-  }
-  
+  fs_init();  
 }
 
 void InitMultiboot()

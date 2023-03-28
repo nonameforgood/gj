@@ -35,8 +35,6 @@
 #include <ble_advertising.h>
 #include <ble_conn_params.h>
 #include <ble_hci.h>
-#include <ble_advdata.h>
-#include <ble_advertising.h>
 #include <ble_conn_state.h>
 
 
@@ -195,9 +193,6 @@ void SerConnParam(const ble_gap_conn_params_t &conn_params)
 #define GATTS_CHAR_UUID_TEST_B      0xEE01
 #define GATTS_DESCR_UUID_TEST_B     0x2222
 
-
-#define CENTRAL_LINK_COUNT              0                                           /**< Number of central links used by the application. When changing this number remember to adjust the RAM settings*/
-#define PERIPHERAL_LINK_COUNT           1                                           /**< Number of peripheral links used by the application. When changing this number remember to adjust the RAM settings*/
 
 #define MIN_CONN_INTERVAL               MSEC_TO_UNITS(8, UNIT_1_25_MS)            /**< Minimum acceptable connection interval (0.1 seconds). */
 #define MAX_CONN_INTERVAL               MSEC_TO_UNITS(200, UNIT_1_25_MS)            /**< Maximum acceptable connection interval (0.2 second). */
@@ -496,7 +491,9 @@ bool GJBLEServer::BLEClient::Indicate(uint16_t handle, const uint8_t *data, uint
 
 void GJBLEServer::BLEClient::Disconnect()
 {
-  sd_ble_gap_disconnect(m_conn_id, BLE_HCI_STATUS_CODE_SUCCESS);
+  uint32_t err_code;
+  err_code = sd_ble_gap_disconnect(m_conn_id, BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION);
+  APP_ERROR_CHECK(err_code);
 }
 
 int GJBLEServer::BLEClient::status() const
@@ -687,13 +684,18 @@ void GJBLEServer::HandleBLEEvent(ble_evt_t * p_ble_evt)
 
           DeleteClient(gattsEvt->conn_handle);
           //SetupAdvertising(addl_adv_manuf_data, sizeof(addl_adv_manuf_data));
-          #if defined(NRF_SDK12)
-            err_code = ble_advertising_start(BLE_ADV_MODE_FAST);
-            APP_ERROR_CHECK(err_code);
-          #elif defined(NRF_SDK17)
-            err_code = ble_advertising_start(&m_advertising, BLE_ADV_MODE_FAST);
-            APP_ERROR_CHECK(err_code);
-          #endif
+
+          //don't restart adv if client was disconnected from GJBLEServer::Term
+          if (m_init)
+          {
+            #if defined(NRF_SDK12)
+              err_code = ble_advertising_start(BLE_ADV_MODE_FAST);
+              APP_ERROR_CHECK(err_code);
+            #elif defined(NRF_SDK17)
+              err_code = ble_advertising_start(&m_advertising, BLE_ADV_MODE_FAST);
+              APP_ERROR_CHECK(err_code);
+            #endif
+          }
 
           if (m_clients.empty())
           {
@@ -1230,10 +1232,6 @@ void GJBLEServer::Command_bleint(const CommandInfo &info)
 
 DEFINE_COMMAND_ARGS(ble, GJBLEServer::Command_ble);
 
-#if defined(NRF_SDK12)
-extern sys_evt_handler_t g_sys_evt_handler;
-#endif
-
 void GJBLEServer::OnExit()
 {
   if (ms_instance)
@@ -1242,6 +1240,9 @@ void GJBLEServer::OnExit()
 
 bool GJBLEServer::Init()
 {
+  if (m_init)
+    return true;
+
   RegisterTerminalHandler();
 
   REFERENCE_COMMAND(ble);
@@ -1271,39 +1272,25 @@ bool GJBLEServer::Init()
     //REFERENCE_COMMAND("blesendlog", sendWBLog);
   }
 
+  uint32_t err_code;
+  
+  m_adv_uuids[0] = {GATTS_SERVICE_UUID_TEST_A, BLE_UUID_TYPE_BLE};
+    m_adv_uuids[1] = {GATTS_SERVICE_UUID_TEST_B, BLE_UUID_TYPE_BLE}; 
 
-  if (!m_init)
-  {
-    uint32_t err_code;
-
-    InitSoftDevice();
+    //uint8_t addl_adv_manuf_data[] = {0x02, 0x01, 0x06, 0x02, 0x0a, 0x03, 0x08, 0xFF, 0x11, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05};   
     
-    ble_enable_params_t ble_enable_params;
-    err_code = softdevice_enable_get_default_config(CENTRAL_LINK_COUNT,
-                                                    PERIPHERAL_LINK_COUNT,
-                                                    &ble_enable_params);
-    GJ_CHECK_ERROR(err_code);
+    //SetAdvManufData(addl_adv_manuf_data, sizeof(addl_adv_manuf_data));
 
-    // Check the ram settings against the used number of links
-    CHECK_RAM_START_ADDR(CENTRAL_LINK_COUNT, PERIPHERAL_LINK_COUNT);
+    
+    
 
-    // Enable BLE stack.
-#if (NRF_SD_BLE_API_VERSION == 3) && false
-    ble_enable_params.gatt_enable_params.att_mtu = NRF_BLE_MAX_MTU_SIZE;
-#endif
-    err_code = softdevice_enable(&ble_enable_params);
-    GJ_CHECK_ERROR(err_code);
+  if (!m_bleInit)
+  {
+    GJ_ASSERT(softdevice_handler_is_enabled(), "Soft device is not enabled");
 
-    // Register with the SoftDevice handler module for BLE events.
+  // Register with the SoftDevice handler module for BLE events.
     err_code = softdevice_ble_evt_handler_set(OnBLEEvent);
     GJ_CHECK_ERROR(err_code);
-
-#if defined(NRF_SDK12)
-    // Overwrite existing sys handler if any
-    g_sys_evt_handler = sys_evt_dispatch;
-    err_code = softdevice_sys_evt_handler_set(g_sys_evt_handler);
-    GJ_CHECK_ERROR(err_code);
-#endif
 
     ble_gap_conn_params_t   gap_conn_params;
     ble_gap_conn_sec_mode_t sec_mode;
@@ -1325,17 +1312,7 @@ bool GJBLEServer::Init()
     err_code = sd_ble_gap_ppcp_set(&gap_conn_params);
     GJ_CHECK_ERROR(err_code);
 
-    m_adv_uuids[0] = {GATTS_SERVICE_UUID_TEST_A, BLE_UUID_TYPE_BLE};
-    m_adv_uuids[1] = {GATTS_SERVICE_UUID_TEST_B, BLE_UUID_TYPE_BLE}; 
-
-    //uint8_t addl_adv_manuf_data[] = {0x02, 0x01, 0x06, 0x02, 0x0a, 0x03, 0x08, 0xFF, 0x11, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05};   
     
-    //SetAdvManufData(addl_adv_manuf_data, sizeof(addl_adv_manuf_data));
-
-    
-    
-    SetupAdvertising(addl_adv_manuf_data, sizeof(addl_adv_manuf_data));
-    SetAdvManufData(addl_adv_manuf_data, sizeof(addl_adv_manuf_data));
 
     err_code = sd_ble_gatts_service_add(BLE_GATTS_SRVC_TYPE_PRIMARY, &m_adv_uuids[0], &m_service_handle[0]);
     GJ_CHECK_ERROR(err_code);
@@ -1349,7 +1326,18 @@ bool GJBLEServer::Init()
 
     conn_params_init();
 
+    //uint8_t addl_adv_manuf_data[] = {0x04, 0xFF, 0x11, 0x12, 0x13};   
+    //SetAdvManufData(addl_adv_manuf_data, sizeof(addl_adv_manuf_data));
+
+    ms_instance = this;
     
+    m_bleInit = true;
+  }
+
+
+    SetupAdvertising(addl_adv_manuf_data, sizeof(addl_adv_manuf_data));
+    SetAdvManufData(addl_adv_manuf_data, sizeof(addl_adv_manuf_data));
+
 #if defined(NRF_SDK12)
     err_code = ble_advertising_start(BLE_ADV_MODE_FAST);
     APP_ERROR_CHECK(err_code);
@@ -1357,14 +1345,6 @@ bool GJBLEServer::Init()
     err_code = ble_advertising_start(&m_advertising, BLE_ADV_MODE_FAST);
     APP_ERROR_CHECK(err_code);
 #endif
-
-    //uint8_t addl_adv_manuf_data[] = {0x04, 0xFF, 0x11, 0x12, 0x13};   
-    //SetAdvManufData(addl_adv_manuf_data, sizeof(addl_adv_manuf_data));
-
-    ms_instance = this;
-    
-    m_init = true;
-  }
 
   BLE_DBG_PRINT(3, "BLE Server initialized\n");
 
@@ -1378,6 +1358,8 @@ bool GJBLEServer::Init()
   SER("BLE addr %02X:%02X:%02X:%02X:%02X:%02X\n\r", localAddr.addr[0], localAddr.addr[1], localAddr.addr[2],
     localAddr.addr[3], localAddr.addr[4], localAddr.addr[5]);
 
+  m_init = true;
+
   return m_init;
 }
 
@@ -1388,6 +1370,13 @@ void GJBLEServer::Term()
     RemoveTerminalHandler(m_terminalIndex);
     m_terminalIndex = -1;
     LOG("BLE server terminal handler removed\n\r");
+  }
+
+  if (m_init)
+  {    
+    sd_ble_gap_adv_stop();
+
+    m_init = false;
   }
 
   Clients clients = std::move(m_clients);
@@ -1407,16 +1396,6 @@ void GJBLEServer::Term()
   }
 
   m_commands.shrink_to_fit();
-
-  if (m_init)
-  {    
-    sd_ble_gap_adv_stop();
-
-  
-    softdevice_handler_sd_disable();
-
-    m_init = false;
-  }
 
   LOG("BLE server terminated\n\r");
 }
@@ -1597,15 +1576,9 @@ void GJBLEServer::SendNextHelpCommand(SendHelpCommand *helpCommand)
     GJEventManager->Add(func);
   }
 };
-  
-uint32_t GetPartitionIndex();
 
 void GJBLEServer::SendHelp(BLEClient &client, uint16_t gatts_if, uint16_t descr_handle)
 {
-  LogRam();
-
-  SER("Running partition %d\n\r", GetPartitionIndex());
-
   SendHelpCommand *helpCommand = new SendHelpCommand;
 
   helpCommand->client = &client;
