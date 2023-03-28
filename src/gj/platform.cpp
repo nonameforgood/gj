@@ -250,7 +250,7 @@ static uint64_t GetElapsedMicrosInternal()
   uint32_t counter = app_timer_cnt_get();
   uint32_t rtcElapsed;
 
-  if (counter > s_platformTimer.m_base)
+  if (counter >= s_platformTimer.m_base)
     rtcElapsed = counter - s_platformTimer.m_base;
   else
     rtcElapsed = 0xffffff - s_platformTimer.m_base + counter;
