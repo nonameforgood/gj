@@ -491,7 +491,9 @@ bool GJBLEServer::BLEClient::Indicate(uint16_t handle, const uint8_t *data, uint
 
 void GJBLEServer::BLEClient::Disconnect()
 {
-  sd_ble_gap_disconnect(m_conn_id, BLE_HCI_STATUS_CODE_SUCCESS);
+  uint32_t err_code;
+  err_code = sd_ble_gap_disconnect(m_conn_id, BLE_HCI_REMOTE_USER_TERMINATED_CONNECTION);
+  APP_ERROR_CHECK(err_code);
 }
 
 int GJBLEServer::BLEClient::status() const
@@ -682,13 +684,18 @@ void GJBLEServer::HandleBLEEvent(ble_evt_t * p_ble_evt)
 
           DeleteClient(gattsEvt->conn_handle);
           //SetupAdvertising(addl_adv_manuf_data, sizeof(addl_adv_manuf_data));
-          #if defined(NRF_SDK12)
-            err_code = ble_advertising_start(BLE_ADV_MODE_FAST);
-            APP_ERROR_CHECK(err_code);
-          #elif defined(NRF_SDK17)
-            err_code = ble_advertising_start(&m_advertising, BLE_ADV_MODE_FAST);
-            APP_ERROR_CHECK(err_code);
-          #endif
+
+          //don't restart adv if client was disconnected from GJBLEServer::Term
+          if (m_init)
+          {
+            #if defined(NRF_SDK12)
+              err_code = ble_advertising_start(BLE_ADV_MODE_FAST);
+              APP_ERROR_CHECK(err_code);
+            #elif defined(NRF_SDK17)
+              err_code = ble_advertising_start(&m_advertising, BLE_ADV_MODE_FAST);
+              APP_ERROR_CHECK(err_code);
+            #endif
+          }
 
           if (m_clients.empty())
           {
@@ -1233,6 +1240,9 @@ void GJBLEServer::OnExit()
 
 bool GJBLEServer::Init()
 {
+  if (m_init)
+    return true;
+
   RegisterTerminalHandler();
 
   REFERENCE_COMMAND(ble);
@@ -1362,6 +1372,13 @@ void GJBLEServer::Term()
     LOG("BLE server terminal handler removed\n\r");
   }
 
+  if (m_init)
+  {    
+    sd_ble_gap_adv_stop();
+
+    m_init = false;
+  }
+
   Clients clients = std::move(m_clients);
   while(!clients.empty())
   {
@@ -1379,13 +1396,6 @@ void GJBLEServer::Term()
   }
 
   m_commands.shrink_to_fit();
-
-  if (m_init)
-  {    
-    sd_ble_gap_adv_stop();
-
-    m_init = false;
-  }
 
   LOG("BLE server terminated\n\r");
 }
