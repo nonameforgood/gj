@@ -134,6 +134,7 @@ DEFINE_CONFIG_INT32(ble.minint, ble_minint, 0);
 DEFINE_CONFIG_INT32(ble.fastadv, ble_fastadv, 150);         //fast adv interval, milliseconds
 DEFINE_CONFIG_INT32(ble.slowadv, ble_slowadv, 750);         //slow adv interval, milliseconds
 DEFINE_CONFIG_INT32(ble.fasttimeout, ble_fasttimeout, 10);  //seconds
+DEFINE_CONFIG_INT32(ble.power, ble_power, 0);               //TX power
 
 void SendRecentLog(tl::function_ref<void(const char *)> cb);
 
@@ -1326,6 +1327,10 @@ bool GJBLEServer::Init()
 
     conn_params_init();
 
+    const int32_t power = GJ_CONF_INT32_VALUE(ble_power);
+    err_code = sd_ble_gap_tx_power_set((int8_t)power);
+    GJ_CHECK_ERROR(err_code);
+    
     //uint8_t addl_adv_manuf_data[] = {0x04, 0xFF, 0x11, 0x12, 0x13};   
     //SetAdvManufData(addl_adv_manuf_data, sizeof(addl_adv_manuf_data));
 
