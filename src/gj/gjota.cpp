@@ -469,6 +469,9 @@ void GJOTA::Ending(uint32_t step)
     char date[20];
     ConvertEpoch(GetUnixtime(), date);
 
+    //trigger last date file update
+    SetUnixtime(GetUnixtime());
+
     LOG("OTA End:%s\n\r", date);
     GJ_FLUSH_LOG();
 
