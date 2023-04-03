@@ -9,7 +9,7 @@
   #include <driver/uart.h>
   constexpr uint32_t MaxTerminalHandlers = 4;
 #elif defined(NRF)
-  constexpr uint32_t MaxTerminalHandlers = 1;
+  constexpr uint32_t MaxTerminalHandlers = 2;
 typedef uint32_t (*nrf_log_timestamp_func_t)(void);
 extern "C" {
   ret_code_t nrf_log_init(nrf_log_timestamp_func_t timestamp_func);

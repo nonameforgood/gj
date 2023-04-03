@@ -288,7 +288,6 @@ void WriteLastDateFileHandler()
   GJEventManager->DelayAdd(WriteLastDateFileHandler, delay);
 }
 
-
 static void printTime()
 {
   char date[20];
@@ -296,9 +295,24 @@ static void printTime()
   SER("%s\n\r", date);
 };
 
-static void printUnixtime()
+static void Command_Unixtime(const char *command)
 {
-  SER("%d\n\r", GetUnixtime());
+  CommandInfo info;
+  GetCommandInfo(command, info);
+  if (info.m_argCount >= 1)
+  {
+    const int32_t unixtime = strtol(info.m_args[0].data(), nullptr, 0);
+    if (unixtime != 0)
+      SetUnixtime(unixtime);
+  }
+  else
+  {
+    const int32_t unixtime = GetUnixtime();
+    char date[20];
+    ConvertEpoch(unixtime, date);
+    SER("Unixtime:%d(%s)\n\r", unixtime, date);
+  }
+
 };
 
 #if defined(NRF)
@@ -355,7 +369,7 @@ static void rtc1_init(void)
 #endif 
 
 DEFINE_COMMAND_NO_ARGS(time, printTime);
-DEFINE_COMMAND_NO_ARGS(unixtime, printUnixtime);
+DEFINE_COMMAND_ARGS(unixtime, Command_Unixtime);
 
 void InitializeDateTime(OnlineDateUpdater updateFunc)
 { 

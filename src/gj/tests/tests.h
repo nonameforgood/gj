@@ -55,7 +55,7 @@ void LogTest(const char *name, bool success);
     #define TEST_PIN_D 25
 #elif defined(NRF52)
     #define TEST_PIN_A 16
-    #define TEST_PIN_B 17
+    #define TEST_PIN_B 17   //pin 17 is also LED1 on DK52, which acts as a visual aid
 
     #define TEST_PIN_C 4
     #define TEST_PIN_D 29
