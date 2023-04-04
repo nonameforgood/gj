@@ -141,7 +141,6 @@ TerminalReadyHandler g_terminalReadyHandlers[MaxTerminalHandlers];
 
 uint32_t AddTerminalHandler(TerminalHandler newHandler, TerminalReadyHandler ready)
 {
-  printf("adding term handler\n\r");
   for (uint32_t i = 0 ; i < MaxTerminalHandlers ; ++i)
   {
     TerminalHandler &handler = g_terminalHandlers[i];
@@ -149,10 +148,11 @@ uint32_t AddTerminalHandler(TerminalHandler newHandler, TerminalReadyHandler rea
     {
       handler = newHandler;
       g_terminalReadyHandlers[i] = ready;
+      SER("Terminal handler added\n\r");
       return i;
     }
   }
-  
+  SER("ERROR:Terminal handler not added\n\r");
   return -1;
 }
 
