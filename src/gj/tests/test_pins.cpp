@@ -125,9 +125,8 @@ void TestDigitalSensorAutoToggleCB()
 
   for (int i = 0 ; i < 10 ; ++i)
   {
-    Delay(refreshRate);
     WritePin(TEST_PIN_B, i % 2);
-
+    Delay(refreshRate);
     refreshEventManager();
   }
   
