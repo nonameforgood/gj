@@ -244,10 +244,16 @@ void GetCommandInfo(const char *command, CommandInfo &info)
       info.m_commandLength = dividerPos - command;
     }
 
-    while(dividerPos[1] == ' ')
+    if (info.m_argCount > 0 && info.m_argsLength[info.m_argCount - 1] == 0)
+    {
+      info.m_argsLength[info.m_argCount - 1] = dividerPos - info.m_argsBegin[info.m_argCount - 1];
+    }
+
+    do
     {
       dividerPos++;
     }
+    while(dividerPos[0] == ' ');
 
     if (info.m_argCount >= CommandInfo::MaxArgs)
     {
@@ -255,20 +261,15 @@ void GetCommandInfo(const char *command, CommandInfo &info)
       break;
     }
 
-    if (info.m_argCount > 0 && info.m_argsLength[info.m_argCount - 1] == 0)
-    {
-      info.m_argsLength[info.m_argCount - 1] = dividerPos - info.m_argsBegin[info.m_argCount - 1];
-    }
-  
-    info.m_argsBegin[info.m_argCount] = dividerPos + 1;
-    info.m_argsOffset[info.m_argCount] = dividerPos + 1 - command;
+    info.m_argsBegin[info.m_argCount] = dividerPos;
+    info.m_argsOffset[info.m_argCount] = dividerPos - command;
     
-    if (dividerPos[1] == '"')
+    if (dividerPos[0] == '"')
     {
       info.m_argsBegin[info.m_argCount]++;
       info.m_argsOffset[info.m_argCount]++;
       
-      const char *endDividerPos = strstr(dividerPos + 2, "\"");
+      const char *endDividerPos = strstr(dividerPos + 1, "\"");
       if (endDividerPos)
       {
         info.m_argsLength[info.m_argCount] = endDividerPos - dividerPos - 1;
@@ -276,7 +277,8 @@ void GetCommandInfo(const char *command, CommandInfo &info)
       }
     }
 
-    info.m_argCount++;
+    if (dividerPos[0] != 0)
+      info.m_argCount++;
 
     it = dividerPos + 1;
   }
@@ -285,7 +287,8 @@ void GetCommandInfo(const char *command, CommandInfo &info)
   
   if (info.m_argCount)
   {
-    info.m_argsLength[info.m_argCount-1] = command + info.m_totalLength - info.m_argsBegin[info.m_argCount - 1];
+    if (!info.m_argsLength[info.m_argCount-1])
+      info.m_argsLength[info.m_argCount-1] = command + info.m_totalLength - info.m_argsBegin[info.m_argCount - 1];
 
     //SER("CommandInfo\n\r");
     //remove double quotes
@@ -314,7 +317,7 @@ void GetCommandInfo(const char *command, CommandInfo &info)
       //SER("  %d:offset=%d length=%d arg:%s\n\r", i, info.m_argsOffset[i], info.m_argsLength[i], info.m_argsBegin[i] );
     }
   }
-  else
+  else if (info.m_commandLength == 0)
   {
     info.m_commandLength = info.m_totalLength;
   }
