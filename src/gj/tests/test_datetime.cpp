@@ -26,35 +26,30 @@ void TestSetGetUnixtime()
 
 static const char *g_serialTestString = "";
 static bool g_serialTestStringFound = false;
-static bool g_serialTestTerminalHandlerCalled = false;
 static void TestDateTimeTerminalHandler(const char *string)
 {
-  g_serialTestTerminalHandlerCalled = true;
-
-  if (!strcmp(string, g_serialTestString))
+  if (!strncmp(string, g_serialTestString, strlen(g_serialTestString)))
     g_serialTestStringFound = true;
 } 
 
 void TestCommandUnixtime()
 {
-  uint32_t terminalHandle = AddTerminalHandler(TestDateTimeTerminalHandler);
+  const uint32_t terminalHandle = AddTerminalHandler(TestDateTimeTerminalHandler);
 
   g_serialTestString = "SetUnixtime:1(1969-12-31T20:00:01)";
   InterpretCommand("unixtime 1");
-  TEST_CASE_VALUE_BOOL("Test SetUnixtime command, 1", g_serialTestString, true);
+  TEST_CASE_VALUE_BOOL("Test SetUnixtime command, 1", g_serialTestStringFound, true);
   g_serialTestStringFound = false;
-  g_serialTestTerminalHandlerCalled = false;
 
-  g_serialTestString = "SetUnixtime:1(2023-04-03T00:00:00)";
+  g_serialTestString = "SetUnixtime:1680494400(2023-04-03T00:00:00)";
   InterpretCommand("unixtime 1680494400");
-  TEST_CASE_VALUE_BOOL("Test SetUnixtime command, 1680494400", g_serialTestString, true);
+  TEST_CASE_VALUE_BOOL("Test SetUnixtime command, 1680494400", g_serialTestStringFound, true);
   g_serialTestStringFound = false;
-  g_serialTestTerminalHandlerCalled = false;
 
-  g_serialTestString = "";
+  g_serialTestString = "Unixtime:";
   InterpretCommand("unixtime ");
-  TEST_CASE_VALUE_BOOL("Test SetUnixtime command, space", g_serialTestTerminalHandlerCalled, false);
-
+  TEST_CASE_VALUE_BOOL("Test Unixtime command space, string found", g_serialTestStringFound, true);
+  g_serialTestStringFound = false;
 
   RemoveTerminalHandler(terminalHandle);
 }

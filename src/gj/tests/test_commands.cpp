@@ -219,4 +219,74 @@ void TestCommands()
       TEST_CASE_VALUE_BOOL("SubCommand none, TestC not called", SubCommand_TestC_Called, false);
     }
   }
+
+  BEGIN_TEST(MultiSpaces)
+  {
+    //trailing space
+    {
+      const char *command = "somecmd ";
+      CommandInfo info;
+      GetCommandInfo(command, info);
+
+      TEST_CASE_VALUE_INT32("MultiSpaces, trailing, command length", info.m_commandLength, 7, 7);
+      TEST_CASE_VALUE_INT32("MultiSpaces, trailing, command total length", info.m_totalLength, 8, 8);
+      TEST_CASE_VALUE_INT32("MultiSpaces, trailing, command arg count", info.m_argCount, 0, 0);
+    }
+
+    //extra space before arg0
+    {
+      const char *command = "somecmd  argA";
+      CommandInfo info;
+      GetCommandInfo(command, info);
+
+      TEST_CASE_VALUE_INT32("MultiSpaces, before arg0, command length", info.m_commandLength, 7, 7);
+      TEST_CASE_VALUE_INT32("MultiSpaces, before arg0, command total length", info.m_totalLength, 13, 13);
+      TEST_CASE_VALUE_INT32("MultiSpaces, before arg0, command arg count", info.m_argCount, 1, 1);
+      TEST_CASE_VALUE_BOOL( "MultiSpaces, before arg0, arg0 value", info.m_args[0] == "argA", true);
+    }
+
+
+    //extra space after arg0
+    {
+      const char *command = "somecmd  argA ";
+      CommandInfo info;
+      GetCommandInfo(command, info);
+
+      TEST_CASE_VALUE_INT32("MultiSpaces, before arg0, command length", info.m_commandLength, 7, 7);
+      TEST_CASE_VALUE_INT32("MultiSpaces, before arg0, command total length", info.m_totalLength, 14, 14);
+      TEST_CASE_VALUE_INT32("MultiSpaces, before arg0, command arg count", info.m_argCount, 1, 1);
+      TEST_CASE_VALUE_BOOL( "MultiSpaces, before arg0, arg0 value", info.m_args[0] == "argA", true);
+    }
+
+    //extra space between all args
+    {
+      const char *command = "somecmd  argA  argB  argC  argD";
+      CommandInfo info;
+      GetCommandInfo(command, info);
+
+      TEST_CASE_VALUE_INT32("MultiSpaces, between all, command length", info.m_commandLength, 7, 7);
+      TEST_CASE_VALUE_INT32("MultiSpaces, between all, command total length", info.m_totalLength, 31, 31);
+      TEST_CASE_VALUE_INT32("MultiSpaces, between all, command arg count", info.m_argCount, 4, 4);
+      TEST_CASE_VALUE_BOOL( "MultiSpaces, between all, arg0 value", info.m_args[0] == "argA", true);
+      TEST_CASE_VALUE_BOOL( "MultiSpaces, between all, arg1 value", info.m_args[1] == "argB", true);
+      TEST_CASE_VALUE_BOOL( "MultiSpaces, between all, arg2 value", info.m_args[2] == "argC", true);
+      TEST_CASE_VALUE_BOOL( "MultiSpaces, between all, arg3 value", info.m_args[3] == "argD", true);
+    }
+
+
+    //extra space between all args and after last arg
+    {
+      const char *command = "somecmd  argA  argB  argC  argD  ";
+      CommandInfo info;
+      GetCommandInfo(command, info);
+
+      TEST_CASE_VALUE_INT32("MultiSpaces, between all and after, command length", info.m_commandLength, 7, 7);
+      TEST_CASE_VALUE_INT32("MultiSpaces, between all and after, command total length", info.m_totalLength, 33, 33);
+      TEST_CASE_VALUE_INT32("MultiSpaces, between all and after, command arg count", info.m_argCount, 4, 4);
+      TEST_CASE_VALUE_BOOL( "MultiSpaces, between all and after, arg0 value", info.m_args[0] == "argA", true);
+      TEST_CASE_VALUE_BOOL( "MultiSpaces, between all and after, arg1 value", info.m_args[1] == "argB", true);
+      TEST_CASE_VALUE_BOOL( "MultiSpaces, between all and after, arg2 value", info.m_args[2] == "argC", true);
+      TEST_CASE_VALUE_BOOL( "MultiSpaces, between all and after, arg3 value", info.m_args[3] == "argD", true);
+    }
+  }
 }

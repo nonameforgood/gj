@@ -104,6 +104,10 @@ void TestDigitalSensorAutoToggleCB()
       testPinEventCount++;
   };
 
+  bool testPinBIsInput = false;
+  SetupPin(TEST_PIN_B, testPinBIsInput, 0);
+  WritePin(TEST_PIN_B, 0);
+
   int32_t pullDown = -1;
   int32_t pullUp = 1;
 
@@ -111,12 +115,8 @@ void TestDigitalSensorAutoToggleCB()
   DigitalSensor pinA(refreshRate);
   DigitalSensorAutoToggleCB sensorCB(&pinA, 0, -1);
   pinA.SetPin(TEST_PIN_A, pullDown);
-  pinA.EnableInterrupts(true);
-
   sensorCB.SetOnChange(onTestPinARefresh);
-
-  bool testPinBIsInput = false;
-  SetupPin(TEST_PIN_B, testPinBIsInput, 0);
+  pinA.EnableInterrupts(true);
 
   auto refreshEventManager = []()
   {
@@ -125,13 +125,12 @@ void TestDigitalSensorAutoToggleCB()
 
   for (int i = 0 ; i < 10 ; ++i)
   {
-    Delay(refreshRate);
     WritePin(TEST_PIN_B, i % 2);
-
+    Delay(refreshRate+5);
     refreshEventManager();
   }
   
-  TEST_CASE_VALUE_INT32("Pin Input AutoToggleCB", testPinEventCount, 5, 6);
+  TEST_CASE_VALUE_INT32("Pin Input AutoToggleCB", testPinEventCount, 9, 9);
 }
 
 
