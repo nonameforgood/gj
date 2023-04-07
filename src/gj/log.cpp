@@ -525,8 +525,10 @@ void InitLog(const char *prefix)
   g_lastLogIndex = logIndex;
 
   
+#ifdef ESP32
   if (GJ_CONF_BOOL_VALUE(log_ets))
   {
     AddEtsHandler(LogEtsOutput);
   }
+#endif
 }
