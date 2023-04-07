@@ -294,10 +294,7 @@ bool GJOTA::Begin(uint32_t size, GJString &response)
   EraseSector(m_flashOffset);
 #endif
 
-  char date[20];
-  ConvertEpoch(GetUnixtime(), date);
-
-  LOG("OTA Start updating %s\n\r", date);
+  LOG("OTA Start updating %d\n\r", GetUnixtime());
 #if  defined(GJ_LOG_ENABLE)
   FlushLog();
 #endif
@@ -308,10 +305,7 @@ bool GJOTA::End()
 {
   m_offset = 0;
 
-  char date[20];
-  ConvertEpoch(GetUnixtime(), date);
-
-  LOG("OTA End:%s\n\r", date);
+  LOG("OTA End:%d\n\r", GetUnixtime());
 #if  defined(GJ_LOG_ENABLE)
   FlushLog();
 #endif
@@ -466,13 +460,10 @@ void GJOTA::Ending(uint32_t step)
   }
   else if (step == 0)
   {
-    char date[20];
-    ConvertEpoch(GetUnixtime(), date);
-
     //trigger last date file update
     SetUnixtime(GetUnixtime());
 
-    LOG("OTA End:%s\n\r", date);
+    LOG("OTA End:%d\n\r", GetUnixtime());
     GJ_FLUSH_LOG();
 
     const uint64_t delayMS = 500;
@@ -527,10 +518,8 @@ bool GJOTA::EndPart(GJString &response)
   if (Update.isFinished() && Update.end()) {
       
       delay(10);
-      char date[20];
-      ConvertEpoch(GetUnixtime(), date);
-  
-      LOG("OTA End:%s\n\r", date);
+
+      LOG("OTA End:%d\n\r", GetUnixtime());
   #if  defined(GJ_LOG_ENABLE)
     FlushLog();
   #endif
