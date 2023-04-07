@@ -175,9 +175,7 @@ void SetUnixtime(uint32_t unixtime, bool writeFile)
   
   settimeofday(&epochInit, &tz);
 
-  char date[20];
-  ConvertEpoch(unixtime, date);
-  LOG("SetUnixtime:%d(%s)\n\r", unixtime, date);
+  LOG("SetUnixtime:%d\n\r", unixtime);
 
   if (writeFile)
   {
@@ -280,11 +278,9 @@ void WriteLastDateFileHandler()
 {
   WriteLastDateFile();
 
-  char date[20];
-  ConvertEpoch(GetUnixtime(), date);
-  LOG("%s\n\r", date);
+  LOG("%d\n\r", GetUnixtime());
 
-  int64_t delay = GJ_CONF_INT32_VALUE(time_writeinterval) * 1000 * 1000;
+  int64_t delay = (int64_t)GJ_CONF_INT32_VALUE(time_writeinterval) * 1000 * 1000;
   GJEventManager->DelayAdd(WriteLastDateFileHandler, delay);
 }
 
@@ -308,11 +304,8 @@ static void Command_Unixtime(const char *command)
   else
   {
     const int32_t unixtime = GetUnixtime();
-    char date[20];
-    ConvertEpoch(unixtime, date);
-    SER("Unixtime:%d(%s)\n\r", unixtime, date);
+    SER("Unixtime:%d\n\r", unixtime);
   }
-
 };
 
 #if defined(NRF)
@@ -370,6 +363,20 @@ static void rtc1_init(void)
 
 DEFINE_COMMAND_NO_ARGS(time, printTime);
 DEFINE_COMMAND_ARGS(unixtime, Command_Unixtime);
+
+void EnableDateTimeWriter(uint32_t freq)
+{
+  if (freq != -1)
+     GJ_CONF_INT32_VALUE(time_writeinterval) = freq;
+
+  const int64_t delay = (int64_t)(GJ_CONF_INT32_VALUE(time_writeinterval)) * 1000 * 1000;
+  GJEventManager->DelayAdd(WriteLastDateFileHandler, delay);
+}
+
+void EnableFormattedTimeCommand()
+{
+  REFERENCE_COMMAND(time);
+}
 
 void InitializeDateTime(OnlineDateUpdater updateFunc)
 { 
@@ -498,16 +505,8 @@ void InitializeDateTime(OnlineDateUpdater updateFunc)
   bool writeFile(false);
   SetUnixtime(unixtime, writeFile);
 
-
-  REFERENCE_COMMAND(time);
-  REFERENCE_COMMAND(unixtime);
-
-  if (GJEventManager)
-  {
-    int64_t delay = GJ_CONF_INT32_VALUE(time_writeinterval) * 1000 * 1000;
-    GJEventManager->DelayAdd(WriteLastDateFileHandler, delay);
-  }
   
+  REFERENCE_COMMAND(unixtime);
 }
 
 
