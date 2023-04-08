@@ -366,11 +366,8 @@ void SerialHandler(const char *text)
       Serial.print(text);
       Serial.flush(true);
     #elif defined(NRF)
-      if (!SEGGER_RTT_WriteString(0, text))
-      {
-        Delay(100);
-        SEGGER_RTT_WriteString(0, text);
-      }
+      //note that this can fail if the RTT buffer is not read fast enough by the debugger.
+      SEGGER_RTT_WriteString(0, text);
     #endif
   }
 };
