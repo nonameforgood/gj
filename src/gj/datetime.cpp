@@ -414,12 +414,14 @@ void InitializeDateTime(OnlineDateUpdater updateFunc)
   }
   */
 
+#ifdef ESP32
   CheckRTCMemoryVariable(&g_clockSync, "g_clockSync");
   CheckRTCMemoryVariable(&g_rtcCal, "g_rtcCal");
   CheckRTCMemoryVariable(&lastOnlineUnixtime, "lastOnlineUnixtime");
 
   if (g_rtcCal.rtcFreq == 0)
     g_rtcCal = InitRTCCal();
+#endif
 
   int32_t unixtime = 0;
 
@@ -504,7 +506,6 @@ void InitializeDateTime(OnlineDateUpdater updateFunc)
 
   bool writeFile(false);
   SetUnixtime(unixtime, writeFile);
-
   
   REFERENCE_COMMAND(unixtime);
 }
