@@ -77,7 +77,7 @@ bool GJOTA::HandleMessage(const char *msg, uint32_t size, GJString &response)
 {
   if (msg[size] != 0)
   { 
-    //sscanf and the likes need terminating null chars
+    //strtoul and the likes need terminating null chars
     GJ_ERROR("GJOTA ERROR:non-null terminated string\n");
   
     response = "otafail:invalidcmd";
@@ -122,9 +122,9 @@ bool GJOTA::HandleMessage(const char *msg, uint32_t size, GJString &response)
   
     const char *sub = msg + 9;
 
-    uint32_t otaSize;
-    uint32_t ret = sscanf(sub, "%d", &otaSize);
-    if (ret != 1)
+    uint32_t otaSize = strtoul(sub, nullptr, 0);
+
+    if (otaSize == 0)
     {
       response = "otabeginfail";
       return false;
@@ -149,11 +149,11 @@ bool GJOTA::HandleMessage(const char *msg, uint32_t size, GJString &response)
 
     const char *sub = msg + 13;
 
-    uint32_t partExpectedCrc, partSize;
+    char *endString = nullptr;
+    uint32_t partExpectedCrc = strtoul(sub, &endString, 0);
+    uint32_t partSize = strtoul(endString+1, nullptr, 0);
 
-    uint32_t ret = sscanf(sub, "%u,%d", &partExpectedCrc, &partSize);
-
-    if (ret != 2)
+    if (partSize == 0)
     {
       response = "otabeginpartfail";
       return false;
@@ -187,11 +187,12 @@ bool GJOTA::HandleMessage(const char *msg, uint32_t size, GJString &response)
 
     const char *sub = msg + 13;
 
-    uint32_t offset,partExpectedCrc, partSize;
+    char *endString;  
+    uint32_t offset = strtoul(sub, &endString, 0);
+    uint32_t partExpectedCrc = strtoul(endString+1, &endString, 0);
+    uint32_t partSize = strtoul(endString+1, &endString, 0);
 
-    uint32_t ret = sscanf(sub, "%u,%u,%d", &offset, &partExpectedCrc, &partSize);
-
-    if (ret != 3)
+    if (offset == 0 || partExpectedCrc == 0 || partSize == 0)
     {
       response = CreateOTAErrorResponse("otafail", "RTY@%d", m_retryPart);
       return false;
