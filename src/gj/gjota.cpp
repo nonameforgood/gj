@@ -149,6 +149,7 @@ bool GJOTA::HandleMessage(const char *msg, uint32_t size, GJString &response)
 
     const char *sub = msg + 13;
 
+    //%u,%d
     char *endString = nullptr;
     uint32_t partExpectedCrc = strtoul(sub, &endString, 0);
     uint32_t partSize = strtol(endString+1, nullptr, 0);
@@ -187,6 +188,7 @@ bool GJOTA::HandleMessage(const char *msg, uint32_t size, GJString &response)
 
     const char *sub = msg + 13;
 
+    //%u,%u,%d
     char *endString;  
     uint32_t offset = strtol(sub, &endString, 0);
     uint32_t partExpectedCrc = strtoul(endString+1, &endString, 0);
