@@ -36,12 +36,12 @@ void TestCommandUnixtime()
 {
   const uint32_t terminalHandle = AddTerminalHandler(TestDateTimeTerminalHandler);
 
-  g_serialTestString = "SetUnixtime:1(1969-12-31T20:00:01)";
+  g_serialTestString = "SetUnixtime:1";
   InterpretCommand("unixtime 1");
   TEST_CASE_VALUE_BOOL("Test SetUnixtime command, 1", g_serialTestStringFound, true);
   g_serialTestStringFound = false;
 
-  g_serialTestString = "SetUnixtime:1680494400(2023-04-03T00:00:00)";
+  g_serialTestString = "SetUnixtime:1680494400";
   InterpretCommand("unixtime 1680494400");
   TEST_CASE_VALUE_BOOL("Test SetUnixtime command, 1680494400", g_serialTestStringFound, true);
   g_serialTestStringFound = false;
