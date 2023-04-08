@@ -64,9 +64,8 @@ void gjFormatErrorString(const char *format, ...)
   
   GJLog log(file);
 
-  ConvertEpoch(GetUnixtime(), buffer);
+  sprintf(buffer, "%d\n", GetUnixtime());
   log.Write(buffer);
-  log.Write("\n\r");
 
   va_list argptr;
   va_start(argptr, format);

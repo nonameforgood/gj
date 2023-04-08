@@ -63,6 +63,7 @@ void Command_formatfs(const CommandInfo &commandInfo)
   ShowFSInfo();
 }
 
+#ifdef ESP32
 void Command_rename(const CommandInfo &info) 
 {
   if (info.m_argCount != 2)
@@ -101,6 +102,7 @@ void Command_delete(const CommandInfo &info) {
   
   SER("  Deleted '%s':%s\n\r", info.m_argsBegin[0], ret ? "SUCCESS" : "FAILED");
 } 
+#endif
 
 void Command_dumpfilehex(const CommandInfo &info) {
   if (info.m_argCount != 1)
@@ -200,8 +202,10 @@ void Command_fs(const char *command)
   static constexpr const char * const s_argsName[] = {
     "info",
     "format",
+#ifdef ESP32
     "rename",
     "delete",
+#endif
     "dump",
     "dumphex"
   };
@@ -209,8 +213,10 @@ void Command_fs(const char *command)
   static void (*const s_argsFuncs[])(const CommandInfo &commandInfo){
     Command_info,
     Command_formatfs,
+#ifdef ESP32
     Command_rename,
     Command_delete,
+#endif
     Command_dumpfile,
     Command_dumpfilehex,
     
@@ -228,7 +234,9 @@ DEFINE_CONFIG_BOOL(file.autoflush, file_autoflush, false);
 
 void InitFileSystem(const char *appFolder)
 {
+#ifdef ESP32
   SetAppFolder(appFolder);
+#endif
 
   FileSystem::Init();
 
@@ -801,20 +809,17 @@ void ShowFSInfo()
   auto cb = [](File &file, uint32_t depth)
   {
     time_t const lastWrite = file.getLastWrite();
-    
-    char date[24];
-    ConvertEpoch(lastWrite, date);
 
     const char *spaces = "                        ";
     int spaceCount = 24 - strlen(file.name()) - depth * 2;
 
     if(file.isDirectory())
     {  
-      LOG("   %.*s%s%.*s             lastWrite:%s\n\r", depth * 2, spaces, file.name(), spaceCount, spaces, date);
+      LOG("   %.*s%s%.*s             lastWrite:%d\n\r", depth * 2, spaces, file.name(), spaceCount, spaces, lastWrite);
     } 
     else 
     {
-      LOG("   %.*s%s%.*s Size:%6d lastWrite:%s\n\r", depth * 2, spaces, file.name(), spaceCount, spaces, file.size(), date);
+      LOG("   %.*s%s%.*s Size:%6d lastWrite:%d\n\r", depth * 2, spaces, file.name(), spaceCount, spaces, file.size(), lastWrite);
     }
   };
 

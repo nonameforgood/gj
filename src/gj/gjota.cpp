@@ -77,7 +77,7 @@ bool GJOTA::HandleMessage(const char *msg, uint32_t size, GJString &response)
 {
   if (msg[size] != 0)
   { 
-    //sscanf and the likes need terminating null chars
+    //strtol and the likes need terminating null chars
     GJ_ERROR("GJOTA ERROR:non-null terminated string\n");
   
     response = "otafail:invalidcmd";
@@ -122,9 +122,9 @@ bool GJOTA::HandleMessage(const char *msg, uint32_t size, GJString &response)
   
     const char *sub = msg + 9;
 
-    uint32_t otaSize;
-    uint32_t ret = sscanf(sub, "%d", &otaSize);
-    if (ret != 1)
+    uint32_t otaSize = strtol(sub, nullptr, 0);
+
+    if (otaSize == 0)
     {
       response = "otabeginfail";
       return false;
@@ -149,11 +149,12 @@ bool GJOTA::HandleMessage(const char *msg, uint32_t size, GJString &response)
 
     const char *sub = msg + 13;
 
-    uint32_t partExpectedCrc, partSize;
+    //%u,%d
+    char *endString = nullptr;
+    uint32_t partExpectedCrc = strtoul(sub, &endString, 0);
+    uint32_t partSize = strtol(endString+1, nullptr, 0);
 
-    uint32_t ret = sscanf(sub, "%u,%d", &partExpectedCrc, &partSize);
-
-    if (ret != 2)
+    if (partSize == 0)
     {
       response = "otabeginpartfail";
       return false;
@@ -187,11 +188,13 @@ bool GJOTA::HandleMessage(const char *msg, uint32_t size, GJString &response)
 
     const char *sub = msg + 13;
 
-    uint32_t offset,partExpectedCrc, partSize;
+    //%u,%u,%d
+    char *endString;  
+    uint32_t offset = strtol(sub, &endString, 0);
+    uint32_t partExpectedCrc = strtoul(endString+1, &endString, 0);
+    uint32_t partSize = strtol(endString+1, &endString, 0);
 
-    uint32_t ret = sscanf(sub, "%u,%u,%d", &offset, &partExpectedCrc, &partSize);
-
-    if (ret != 3)
+    if (offset == 0 || partExpectedCrc == 0 || partSize == 0)
     {
       response = CreateOTAErrorResponse("otafail", "RTY@%d", m_retryPart);
       return false;
@@ -294,10 +297,8 @@ bool GJOTA::Begin(uint32_t size, GJString &response)
   EraseSector(m_flashOffset);
 #endif
 
-  char date[20];
-  ConvertEpoch(GetUnixtime(), date);
-
-  LOG("OTA Start updating %s\n\r", date);
+  LOG("OTA Start updating\n\r");
+  LOG("Unixtime:%d\n\r", GetUnixtime());
 #if  defined(GJ_LOG_ENABLE)
   FlushLog();
 #endif
@@ -308,10 +309,8 @@ bool GJOTA::End()
 {
   m_offset = 0;
 
-  char date[20];
-  ConvertEpoch(GetUnixtime(), date);
-
-  LOG("OTA End:%s\n\r", date);
+  LOG("OTA End\n\r");
+  LOG("Unixtime:%d\n\r", GetUnixtime());
 #if  defined(GJ_LOG_ENABLE)
   FlushLog();
 #endif
@@ -466,13 +465,11 @@ void GJOTA::Ending(uint32_t step)
   }
   else if (step == 0)
   {
-    char date[20];
-    ConvertEpoch(GetUnixtime(), date);
-
     //trigger last date file update
     SetUnixtime(GetUnixtime());
 
-    LOG("OTA End:%s\n\r", date);
+    LOG("OTA End\n\r");
+    LOG("Unixtime:%d\n\r", GetUnixtime());
     GJ_FLUSH_LOG();
 
     const uint64_t delayMS = 500;
@@ -527,10 +524,9 @@ bool GJOTA::EndPart(GJString &response)
   if (Update.isFinished() && Update.end()) {
       
       delay(10);
-      char date[20];
-      ConvertEpoch(GetUnixtime(), date);
-  
-      LOG("OTA End:%s\n\r", date);
+
+      LOG("OTA End");
+      LOG("Unixtime:%d\n\r", GetUnixtime());
   #if  defined(GJ_LOG_ENABLE)
     FlushLog();
   #endif
