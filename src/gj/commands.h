@@ -78,7 +78,6 @@ void GetCommandInfo(const char *command, CommandInfo &info);
 void GetCommands(Vector<GJString> &commands);
 
 void GetCommandIds(Vector<uint16_t> &commands);
-void GetCommandCount(uint16_t &argCount, uint16_t &noArgCount);
 GJString DescribeCommand(uint16_t id);
 
 struct SubCommands

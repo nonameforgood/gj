@@ -289,4 +289,23 @@ void TestCommands()
       TEST_CASE_VALUE_BOOL( "MultiSpaces, between all and after, arg3 value", info.m_args[3] == "argD", true);
     }
   }
+
+  BEGIN_TEST(CommandIterator)
+  {
+    CommandIterator iterator;
+
+    uint16_t commandCount = 0;
+
+    while(!iterator.End())
+    {
+      commandCount++;
+      const uint16_t id = iterator.Get();
+      const GJString desc = DescribeCommand(id);
+      Delay(15);
+      SER("%s\n\r", desc.c_str());
+      iterator.Next();
+    }
+
+    TEST_CASE_VALUE_INT32("CommandIterator, command count", commandCount, 9, 9);
+  }
 }
