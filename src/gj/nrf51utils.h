@@ -67,7 +67,8 @@ struct FileSectorsDef
 #define DEFINE_FILE_SECTORS(name, path, sec, secCount) const FileSectorsDef __attribute__ ((section(".gj_file_sectors_def"))) fileSectors_##name = {path, static_crc(path), sec, secCount};  const void * ForceLink_file_sectors__##name() {return &fileSectors_##name;}
 
 const FileSectorsDef* GetFileSectorDef(const char *path);
-
+const FileSectorsDef* BeginFileSectors();
+const FileSectorsDef* EndFileSectors();
 
 void InitSoftDevice(uint32_t centralLinks, uint32_t periphLinks);
 void InitFStorage();

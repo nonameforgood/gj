@@ -30,8 +30,7 @@
   auto &CurrentFS = SPIFFS;
 #endif
 
-void DumpFileHex(GJString path, uint32_t offset);
-void DumpFile(GJString path, uint32_t offset);
+void DumpFile(GJString path, uint32_t offset, bool hex);
 
 void Command_info(const CommandInfo &commandInfo ) 
 {
@@ -104,30 +103,7 @@ void Command_delete(const CommandInfo &info) {
 } 
 #endif
 
-void Command_dumpfilehex(const CommandInfo &info) {
-  if (info.m_argCount != 1)
-  {
-    SER("  arg err");
-    return;
-  }
-
-  const char *filepath = info.m_argsBegin[0];
-
-  if (!GJFile::Exists(filepath))
-  {
-    SER("file '%s' not found\n\r", filepath);
-    return;
-  }
-
-  SER("Dumping file :'%s' ----------\n\r", filepath);
-  
-  GJString path = filepath;
-  
-  
-  DumpFileHex(path, 0);
-} 
-
-void Command_dumpfile(const CommandInfo &info) {
+void Command_dumpfile(const CommandInfo &info, bool hex) {
   if (info.m_argCount != 1)
   {
     SER("  arg err");
@@ -145,8 +121,20 @@ void Command_dumpfile(const CommandInfo &info) {
   GJString s = filepath;
 
   SER("Dumping file :'%s' ----------\n\r", filepath);
-  DumpFile(s, 0);
+  DumpFile(s, 0, hex);
 } 
+
+void Command_dumpfile(const CommandInfo &info) 
+{
+  const bool hex = false;
+  Command_dumpfile(info, hex);
+}
+
+void Command_dumpfilehex(const CommandInfo &info) 
+{
+  const bool hex = true;
+  Command_dumpfile(info, hex);
+}
 
 static char s_appFolder[32] = "";
 
@@ -222,7 +210,9 @@ void Command_fs(const char *command)
     
     };
 
-  const SubCommands subCommands = {6, s_argsName, s_argsFuncs};
+  uint32_t argCount = sizeof(s_argsName)/sizeof(s_argsName[0]);
+
+  const SubCommands subCommands = {argCount, s_argsName, s_argsFuncs};
 
   SubCommandForwarder(command, subCommands);
 }
@@ -703,54 +693,10 @@ void FileSystem::ListDir(const char * dirname, uint8_t levels, uint32_t depth, s
 #endif
 }
 
-void DumpFileHex(GJString path, uint32_t offset)
+void DumpFile(GJString path, uint32_t offset, bool hex)
 {
-  GJFile file(path.c_str(), GJFile::Mode::Read);
-  if (!file)
-  {
-    SER("cannot read file '%s'\n\r", path.c_str());
-    SER("Dumping file done ----------\n\r");
-    return;
-  }
-
-  if (!AreTerminalsReady())
-  {
-    if (GJEventManager)
-    {
-      EventManager::Function f = std::bind(DumpFileHex, path, offset);
-      GJEventManager->Add(f);
-    }
-    return;
-  }
-
-  unsigned char buffer[32];
-  //uint32_t const fileSize = file.Size();
+  uint32_t batch = 0;
   
-  //for (uint32_t i = 0 ; i < fileSize ; i += sizeof(buffer))
-  
-  //uint32_t const remain = fileSize - i;
-  uint32_t batch = sizeof(buffer);
-  
-  file.Seek(offset, 0);
-  batch = file.Read(buffer, batch);
-  
-  PrintMemLine(offset, buffer, batch, sizeof(buffer));
-
-  if (file.Tell() != file.Size())
-  {
-    if (GJEventManager)
-    {
-      EventManager::Function f = std::bind(DumpFileHex, path, offset + batch);
-      GJEventManager->Add(f);
-      return;
-    }
-  }
-
-  SER("Dumping file done ----------\n\r");
-}
-
-void DumpFile(GJString path, uint32_t offset)
-{
   GJFile file(path.c_str(), GJFile::Mode::Read);
   if (!file)
   {
@@ -759,31 +705,31 @@ void DumpFile(GJString path, uint32_t offset)
     return;
   }
 
-  if (!AreTerminalsReady())
+  if (AreTerminalsReady())
   {
-    EventManager::Function f = std::bind(DumpFile, path, offset);
-    GJEventManager->Add(f);
-    return;
+    file.Seek(offset, 0);
+
+    unsigned char buffer[129];
+    uint32_t maxReadSize = hex ? 32 : (sizeof(buffer) - 1);
+  
+    batch = maxReadSize;
+  
+    batch = file.Read(buffer, batch);
+    buffer[batch] = 0;
+
+    if (hex)
+    {
+      PrintMemLine(offset, buffer, batch, maxReadSize);
+    }
+    else
+    {
+      SER((char*)buffer);
+    }
   }
-
-  file.Seek(offset, 0);
-
-  unsigned char buffer[129];
-  uint32_t maxReadSize = sizeof(buffer) - 1;
-  uint32_t const fileSize = file.Size();
-  
-  //for (uint32_t i = 0 ; i < fileSize ; i += maxReadSize)
-  
-  //uint32_t const remain = fileSize - i;
-  uint32_t batch = maxReadSize;
-  
-  batch = file.Read(buffer, batch);
-  buffer[batch] = 0;
-  SER((char*)buffer);
 
   if (file.Tell() != file.Size())
   {
-    EventManager::Function f = std::bind(DumpFile, path, offset + batch);
+    EventManager::Function f = std::bind(DumpFile, path, offset + batch, hex);
     GJEventManager->Add(f);
     return;
   }
@@ -806,6 +752,20 @@ void ShowFSInfo()
   LOG("  Used:%d\n\r", CurrentFS.usedBytes());
 #endif
 
+#if GJ_FILE_BLOCKFS()
+  const FileSectorsDef* sectorIt = BeginFileSectors();
+  const FileSectorsDef* sectorItEnd = EndFileSectors();
+
+  const char *spaces = "                        ";
+  
+  while(sectorIt != sectorItEnd)
+  {
+    int spaceCount = 24 - strlen(sectorIt->m_path);
+    LOG("   %s%.*s  MaxSize:%d \n\r", sectorIt->m_path, spaceCount, spaces, sectorIt->m_sectorCount * NRF_FLASH_SECTOR_SIZE);
+
+    sectorIt++;
+  }
+#else
   auto cb = [](File &file, uint32_t depth)
   {
     time_t const lastWrite = file.getLastWrite();
@@ -825,4 +785,6 @@ void ShowFSInfo()
 
   LOG("  Listing directory: %s\r\n\r", "/");
   FileSystem::ListDir("/", 3, cb);
+#endif
+
 }
