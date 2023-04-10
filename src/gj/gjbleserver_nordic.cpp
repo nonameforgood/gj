@@ -2,7 +2,6 @@
 
 #ifdef GJ_NORDIC_BLE
 
-
 #include "gj/esputils.h"
 #include "gj/serial.h"
 #include "gj/commands.h"
@@ -1463,45 +1462,6 @@ void GJBLEServer::InterpretCommand(const char *cmd, uint32_t len, BLEClient *cli
     }
   }
 }  
-
-class CommandIterator
-{
-  public:
-  CommandIterator();
-    uint16_t Get() const;
-    bool End() const;
-    void Next();
-
-  private:
-
-  uint16_t m_index = 0;
-  Vector<uint16_t> m_commands;
-};
-
-CommandIterator::CommandIterator()
-{
-    GetCommandIds(m_commands);
-}
-
-uint16_t CommandIterator::Get() const
-{
-  if (m_index < m_commands.size())
-    return m_commands[m_index];
-
-  return 0;
-}
-
-bool CommandIterator::End() const
-{
-  return m_index >= m_commands.size();
-}
-
-
-void CommandIterator::Next()
-{
-  m_index++;
-}
-
 
 struct GJBLEServer::SendHelpCommand
 {

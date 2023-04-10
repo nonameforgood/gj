@@ -129,8 +129,7 @@ static const CommandDefInfo<void(const char*)>* EndArgsCmds()
 #endif
 
 
-#define GJ_NO_ARGS_BIT 0x1000
-#define GJ_ARGS_BIT 0x2000
+
 
 void InitCommands(uint32_t maxCommands)
 {
@@ -155,6 +154,18 @@ static bool CompareCommand(uint16_t left, uint16_t right)
   const char *rightName = GetCommandName(right);
   return strcmp(leftName, rightName) < 0;
 };
+
+void GetCommandCount(uint16_t &argCount, uint16_t &noArgCount)
+{
+  CommandDefNoArgsIt noArgItBegin = BeginNoArgsCmds();
+  CommandDefNoArgsIt noArgItEnd = EndNoArgsCmds();
+
+  CommandDefArgsIt argItBegin = BeginArgsCmds();
+  CommandDefArgsIt argItEnd = EndArgsCmds();
+  
+  argCount = argItEnd - argItBegin;
+  noArgCount = noArgItEnd - noArgItBegin;
+}
 
 void GetCommandIds(Vector<uint16_t> &commands)
 {
@@ -197,15 +208,9 @@ void GetCommandIds(Vector<uint16_t> &commands)
 GJString DescribeCommand(uint16_t id)
 {
   GJString str;
-  if (id & GJ_NO_ARGS_BIT)
-  {
-    str = GetCommandName(id);
-  }
-  else
-  {
-    str = GetCommandName(id);
+  str = GetCommandName(id);
+  if ((id & GJ_NO_ARGS_BIT) == 0)
     str += " <args>";
-  }
 
   return str;
 }
@@ -433,4 +438,32 @@ void InterpretCommand(const char *commandString)
       //don't log anything as serial input might be garbage
     }
   }
+}
+
+CommandIterator::CommandIterator()
+{
+    GetCommandCount(m_argCount, m_noArgCount);
+}
+
+uint16_t CommandIterator::Get() const
+{
+  uint32_t totalCount = m_argCount + m_noArgCount;
+
+  if (m_index < m_argCount)
+    return m_index | GJ_ARGS_BIT;
+  else if (m_index < totalCount)
+    return (m_index - m_argCount) | GJ_NO_ARGS_BIT;
+
+  return 0;
+}
+
+bool CommandIterator::End() const
+{
+  uint32_t totalCount = m_argCount + m_noArgCount;
+  return m_index >= totalCount;
+}
+
+void CommandIterator::Next()
+{
+  m_index++;
 }

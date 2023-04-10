@@ -70,12 +70,15 @@ struct CommandDefInfo
 bool ForceLinkSymbol(const void *p);
 #define REFERENCE_COMMAND(name) ForceLinkSymbol((void*)&cmddef_##name)
 
+#define GJ_NO_ARGS_BIT 0x1000
+#define GJ_ARGS_BIT 0x2000
 
 void GetCommandInfo(const char *command, CommandInfo &info);
 
 void GetCommands(Vector<GJString> &commands);
 
 void GetCommandIds(Vector<uint16_t> &commands);
+void GetCommandCount(uint16_t &argCount, uint16_t &noArgCount);
 GJString DescribeCommand(uint16_t id);
 
 struct SubCommands
@@ -86,4 +89,20 @@ struct SubCommands
 };
 
 void SubCommandForwarder(const char *command, const SubCommands &subCommands);
+
+class CommandIterator
+{
+public:
+  CommandIterator();
+  uint16_t Get() const;
+  bool End() const;
+  void Next();
+
+private:
+
+  uint16_t m_index = 0;
+  uint16_t m_argCount = 0;
+  uint16_t m_noArgCount = 0;
+};
+
 void InitCommands(uint32_t maxArgsCommands);
