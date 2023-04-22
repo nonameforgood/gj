@@ -103,7 +103,7 @@ bool IsSleepWakeUp()
   const uint32_t resetReason = GetResetReason();
   const uint32_t wakeMask = NRF_POWER_RESETREAS_OFF_MASK |
                             NRF_POWER_RESETREAS_LPCOMP_MASK |
-                            POWER_RESETREAS_DIF_Msk;
+                            NRF_POWER_RESETREAS_DIF_MASK;
   return (resetReason & wakeMask) != 0;
 #endif
 }
