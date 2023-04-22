@@ -7,6 +7,8 @@
   #include <rom/rtc.h>
 #elif defined(NRF)
   #include <nrf_nvic.h>
+  #include <nrf_power.h>
+  #include <hardfault.h>
 #endif
 
 #include "base.h"
@@ -98,7 +100,11 @@ bool IsSleepWakeUp()
 
   return isDeepWake;
 #else
-  return false;
+  const uint32_t resetReason = GetResetReason();
+  const uint32_t wakeMask = NRF_POWER_RESETREAS_OFF_MASK |
+                            NRF_POWER_RESETREAS_LPCOMP_MASK |
+                            NRF_POWER_RESETREAS_DIF_MASK;
+  return (resetReason & wakeMask) != 0;
 #endif
 }
 
@@ -145,6 +151,19 @@ bool IsSleepUlpWakeUp()
   return ret;
 #else
   return false;
+#endif
+}
+
+uint32_t GetResetReason()
+{
+#if defined(ESP32)
+  return (uint32_t)esp_reset_reason();
+#elif defined(NRF)
+  static const uint32_t reason = nrf_power_resetreas_get();
+  nrf_power_resetreas_clear(0xffffffff);  //clear register
+  return reason;
+#else
+  return 0;
 #endif
 }
 
@@ -201,6 +220,39 @@ const char *GetWakeReasonUpToName(esp_sleep_wakeup_cause_t wakeup_reason)
 
   return names[wakeup_reason];
 }
+#elif defined(NRF)
+
+
+const char *GetResetReasonDesc(uint32_t reason)
+{
+  if (reason & NRF_POWER_RESETREAS_RESETPIN_MASK)
+    return "Reset pin";
+  else if (reason & NRF_POWER_RESETREAS_DOG_MASK)
+    return "Watch dog";
+  else if (reason & NRF_POWER_RESETREAS_SREQ_MASK)
+    return "Soft request";
+  else if (reason & NRF_POWER_RESETREAS_LOCKUP_MASK)
+    return "Lockup";
+  else if (reason & NRF_POWER_RESETREAS_OFF_MASK)
+    return "Off wake";
+  else if (reason & NRF_POWER_RESETREAS_LPCOMP_MASK)
+    return "LDCOMP";
+  else if (reason & NRF_POWER_RESETREAS_DIF_MASK)
+    return "Dif";
+#if defined(POWER_RESETREAS_NFC_Msk)
+  else if (reason & NRF_POWER_RESETREAS_NFC_MASK)
+    return "NFC";
+#endif
+#if defined(POWER_RESETREAS_VBUS_Msk)
+  else if (reason & NRF_POWER_RESETREAS_VBUS_MASK)
+    return "VBUS";
+#endif
+  else if (reason != 0)
+    return "Other";
+  else
+    return "Power on";
+}
+
 #endif
 
 bool IsErrorResetState1()
@@ -272,6 +324,9 @@ void PrintResetReason()
   esp_reset_reason_t resetReason = esp_reset_reason();
   LOG("Reset reason: %s(%d)\n\r", GetResetReasonDesc(resetReason), (int)resetReason);
   TESTSTEP("Reset reason: %s(%d)\n\r", GetResetReasonDesc(resetReason), (int)resetReason);
+#elif defined(NRF)
+  const uint32_t resetReason = GetResetReason();
+  SER("Reset reason: %s(%d)\n\r", GetResetReasonDesc(resetReason), resetReason);
 #endif
 }
 
@@ -325,6 +380,26 @@ void SetResetTimeout(uint32_t seconds)
   g_errorTimeout = seconds;
 }
 
+GJ_PERSISTENT_NO_INIT static SoftResetReason s_softResetReason;
+SoftResetReason GetSoftResetReason()
+{
+  return s_softResetReason;
+}
+
+static void SetSoftResetReason(SoftResetReason reason)
+{
+  s_softResetReason = reason;
+}
+
+#if defined(NRF)
+void HardFault_process(HardFault_stack_t * p_stack)
+{
+  SetSoftResetReason(SoftResetReason::HardFault);
+  // Restart the system by default
+  NVIC_SystemReset();
+}
+#endif
+
 bool IsErrorReset()
 {
 #if defined(ESP32)
@@ -336,7 +411,13 @@ bool IsErrorReset()
          resetReason == ESP_RST_TASK_WDT ||
          resetReason == ESP_RST_WDT;
 #else
-  return false;
+  const uint32_t reason = GetResetReason();
+  const uint32_t errorMask = NRF_POWER_RESETREAS_DOG_MASK |
+                             NRF_POWER_RESETREAS_LOCKUP_MASK;
+  const bool isResetError = (reason & errorMask) != 0;
+  const bool isSoftResetError = (reason == NRF_POWER_RESETREAS_SREQ_MASK) && 
+                                GetSoftResetReason() == SoftResetReason::HardFault;
+  return isResetError || isSoftResetError;
 #endif
 }
 
@@ -350,7 +431,8 @@ bool IsPowerOnReset()
   return resetReason == ESP_RST_POWERON ||
          resetReason == (esp_reset_reason_t)RTCWDT_RTC_RESET;
 #else
-  return false;
+  const uint32_t resetReason = GetResetReason();
+  return resetReason == 0;
 #endif
 }
 
@@ -662,6 +744,7 @@ void Reboot()
 
   esp_restart();
 #elif defined(NRF)
+  SetSoftResetReason(SoftResetReason::Reboot);
   sd_nvic_SystemReset();
 #endif
 }
