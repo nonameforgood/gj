@@ -45,7 +45,7 @@ void RestorePinConf(uint32_t pin, uint32_t conf);
 
 #elif defined(NRF)
   #define GJ_PERSISTENT
-  #define GJ_PERSISTENT_NO_INIT
+  #define GJ_PERSISTENT_NO_INIT __attribute__ ((section(".non_init")))
   #define GJ_IRAM
 
   #define GJ_PIN_COUNT 32

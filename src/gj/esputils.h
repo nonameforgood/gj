@@ -9,6 +9,17 @@ bool IsSleepTimerWakeUp();
 bool IsSleepUlpWakeUp();
 bool IsErrorReset();
 bool IsPowerOnReset();
+uint32_t GetResetReason();
+
+
+enum class SoftResetReason
+{
+  None,
+  Reboot,
+  HardFault
+};
+
+SoftResetReason GetSoftResetReason();
 
 int32_t GetSleepTimestamp();
 void SetSleepTimestamp();
