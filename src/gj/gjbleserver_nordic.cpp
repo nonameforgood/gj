@@ -23,8 +23,6 @@
   #include <nrf_sdh_ble.h>
 #endif
 
-
-
 #include <boards.h> 
 
 #include <ble.h>
@@ -36,14 +34,7 @@
 #include <ble_hci.h>
 #include <ble_conn_state.h>
 
-
 #include <app_util_platform.h>
-
-extern "C" {
-  int       SEGGER_RTT_printf(unsigned BufferIndex, const char * sFormat, ...);
-  unsigned  SEGGER_RTT_Write(unsigned BufferIndex, const void* pBuffer, unsigned NumBytes);
-  int       SEGGER_RTT_vprintf(unsigned BufferIndex, const char * sFormat, va_list * pParamList);
-}
 
 #if defined(NRF_SDK17)
   BLE_ADVERTISING_DEF(m_advertising);                                             /**< Advertising module instance. */
@@ -113,7 +104,8 @@ bool PrintOnError(uint32_t err)
 {
   if (IsError(err)) 
   { 
-    SEGGER_RTT_printf(0, "ERROR:%s(0x%x)\n\r", ErrorToName(err), err); 
+    printf("ERROR:%s(0x%x)\n\r", ErrorToName(err), err); 
+    //printf
     return true;
   }
   return false;
@@ -150,7 +142,7 @@ void SendRecentLog(tl::function_ref<void(const char *)> cb);
     va_list ParamList;
 
     va_start(ParamList, sFormat);
-    SEGGER_RTT_vprintf(0, sFormat, &ParamList);
+    vprintf(sFormat, ParamList);
     va_end(ParamList);
   }
 
@@ -159,8 +151,7 @@ void SendRecentLog(tl::function_ref<void(const char *)> cb);
     return GJ_CONF_INT32_VALUE(ble_dbglvl) >= (level);
   }
 
-
-  #define BLE_EVT_SER_LEN(lvl, s, l) { if ( CanPrintBLESerial(lvl)) SEGGER_RTT_Write(0, s, l); }
+  #define BLE_EVT_SER_LEN(lvl, s, l) { if ( CanPrintBLESerial(lvl)) printf(s, l); }
   #define BLE_DBG_PRINT(lvl, ...) { if ( CanPrintBLESerial(lvl)) SER(__VA_ARGS__); }
 
 #else
@@ -479,7 +470,7 @@ bool GJBLEServer::BLEClient::Indicate(uint16_t handle, const uint8_t *data, uint
   }
   
   BLE_EVT_SER(5, "Sent data:'");
-  BLE_EVT_SER_LEN(5, data, len);
+  BLE_EVT_SER_LEN(5, (const char *)data, len);
   BLE_EVT_SER(5, "'\n\r");
 
   m_totalSent += len;

@@ -496,7 +496,7 @@ uint32_t GJFile::Write( int32_t value )
 {
   uint32_t size = 0;
   if(value < 0) {
-      Write('-');
+      Write("-");
       size++;
       value = -value;
   }

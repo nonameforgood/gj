@@ -383,7 +383,9 @@ void SetResetTimeout(uint32_t seconds)
 GJ_PERSISTENT_NO_INIT static SoftResetReason s_softResetReason;
 SoftResetReason GetSoftResetReason()
 {
-  return s_softResetReason;
+  static const SoftResetReason reason = s_softResetReason;
+  s_softResetReason = SoftResetReason::None;    //otherwise debug session get previous value
+  return reason;
 }
 
 static void SetSoftResetReason(SoftResetReason reason)

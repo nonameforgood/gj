@@ -112,8 +112,8 @@ void RestorePinConf(uint16_t pin, uint32_t conf)
   
   extern uint32_t trackedAllocations;   //to make sure everything uses these new and delete function
 
-  #define GJ_LOG_ALLOC(delta, s)  SEGGER_RTT_printf(0, "Alloc id %d:%d(req:%d waste:%d) remain:%d\n\r", ++s_allocId, delta, s, delta ? delta-s : 0, GetAvailableRam());
-  #define GJ_LOG_FREE(s)          SEGGER_RTT_printf(0, "Free:%d remain:%d\n\r", s, GetAvailableRam());
+  #define GJ_LOG_ALLOC(delta, s)  printf("Alloc id %d:%d(req:%d waste:%d) remain:%d\n\r", ++s_allocId, delta, s, delta ? delta-s : 0, GetAvailableRam());
+  #define GJ_LOG_FREE(s)          printf("Free:%d remain:%d\n\r", s, GetAvailableRam());
   #define GJ_ALLOC_BREAK()        BreakOnAllocId()
   #define GJ_ON_ALLOC_DBG(s)      s
 #else
@@ -135,7 +135,7 @@ bool IsInISR()
   return mask != 0;
 }
 
-void *operator new(uint32_t s)
+void *operator new(size_t s)
 {
   GJ_ON_ALLOC_DBG(const uint32_t before = GetAvailableRam());
 
@@ -145,7 +145,7 @@ void *operator new(uint32_t s)
 
   if (d == nullptr)
   {
-    SEGGER_RTT_printf(0, "Out of RAM\n\r");
+    printf("Out of RAM\n\r");
     APP_ERROR_CHECK_BOOL(false);
   }
 
@@ -166,7 +166,7 @@ void *operator new(uint32_t s)
 }
 
 
-void *operator new(uint32_t s, std::align_val_t)
+void *operator new(size_t s, std::align_val_t)
 {
   GJ_ON_ALLOC_DBG(const uint32_t before = GetAvailableRam());
 
@@ -176,7 +176,7 @@ void *operator new(uint32_t s, std::align_val_t)
 
   if (d == nullptr)
   {
-    SEGGER_RTT_printf(0, "Out of RAM\n\r");
+    printf("Out of RAM\n\r");
     APP_ERROR_CHECK_BOOL(false);
   }
 
