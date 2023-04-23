@@ -54,6 +54,8 @@ private:
 #elif NRF_MODULE_ENABLED(SAADC)
   typedef nrf_drv_saadc_evt_t ArgType;
   const nrf_drv_saadc_evt_type_t m_doneEvent = NRF_DRV_SAADC_EVT_DONE;
+#else
+  typedef int ArgType;
 #endif
 
   static void DriverCallback(ArgType const * p_event);
