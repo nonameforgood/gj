@@ -526,11 +526,13 @@ AnalogSensor::AnalogSensor(uint32_t reads)
 : m_reads(reads)
 {
 #if defined(NRF)
+#if NRF_MODULE_ENABLED(ADC) || NRF_MODULE_ENABLED(SAADC)
   if (Adc::GetInstance() == nullptr)
   {
     Adc::CreateInstance();
     Adc::GetInstance()->Init(&AnalogSensor::DriverCallback);
   }
+#endif
 #endif
 }
 
@@ -660,12 +662,12 @@ void AnalogSensor::Sample()
 #if defined(NRF)
   //GJ_ASSERT(ms_currentSensor == nullptr, "Another AnalogSensor is already sampling");
 
-
-  const int32_t channel = Adc::GetPinChannel(GetPin());
-
   m_ready = false;
   ms_currentSensor = this;
+#if NRF_MODULE_ENABLED(ADC) || NRF_MODULE_ENABLED(SAADC)
+  const int32_t channel = Adc::GetPinChannel(GetPin());
   Adc::GetInstance()->StartSampling(channel, m_reads);
+#endif
 #endif
 }
 

@@ -140,10 +140,12 @@ void Adc::TimerCallback()
 
 void Adc::DriverCallback(ArgType const * p_event)
 {
+#if NRF_MODULE_ENABLED(ADC) || NRF_MODULE_ENABLED(SAADC)
   if (p_event->type == ms_instance->m_doneEvent)
   {
       GJEventManager->Add(CallUserCallback);
   }
+#endif
 }
 
 
