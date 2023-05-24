@@ -394,13 +394,48 @@ static void SetSoftResetReason(SoftResetReason reason)
 }
 
 #if defined(NRF)
+
+GJ_PERSISTENT_NO_INIT static uint32_t s_crashAddress;
+GJ_PERSISTENT_NO_INIT static uint32_t s_crashReturnAddress;
+
 void HardFault_process(HardFault_stack_t * p_stack)
 {
+  s_crashAddress = p_stack->pc;
+  s_crashReturnAddress = p_stack->lr;
+
   SetSoftResetReason(SoftResetReason::HardFault);
   // Restart the system by default
   NVIC_SystemReset();
 }
-#endif
+
+void CallAppErrorFaultHandler(uint32_t errCode, uint32_t pc, uint32_t lr)
+{
+  s_crashAddress = pc;
+  s_crashReturnAddress = lr;
+
+  APP_ERROR_HANDLER(errCode);
+}
+
+void Command_CrashData(const char *command)
+{
+  SER("Last crash: pc=0x%x ret=0x%x\n\r", s_crashAddress, s_crashReturnAddress);
+}
+
+DEFINE_COMMAND_ARGS(crashdata, Command_CrashData);
+
+void InitCrashDataCommand()
+{
+  REFERENCE_COMMAND(crashdata);
+}
+
+#elif defined(ESP32)
+
+void InitCrashDataCommand()
+{
+  
+}
+
+#endif //defined(NRF)
 
 bool IsErrorReset()
 {
