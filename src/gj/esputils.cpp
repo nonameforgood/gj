@@ -398,6 +398,16 @@ static void SetSoftResetReason(SoftResetReason reason)
 GJ_PERSISTENT_NO_INIT static uint32_t s_crashAddress;
 GJ_PERSISTENT_NO_INIT static uint32_t s_crashReturnAddress;
 
+uint32_t GetCrashAddress()
+{
+  return s_crashAddress;
+}
+
+uint32_t GetCrashReturnAddress()
+{
+  return s_crashReturnAddress;
+}
+
 void HardFault_process(HardFault_stack_t * p_stack)
 {
   s_crashAddress = p_stack->pc;

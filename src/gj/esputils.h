@@ -126,6 +126,8 @@ void CallAppErrorFaultHandler(uint32_t errCode, uint32_t pc, uint32_t lr);
       }                                                     \
   } while (0)
 
+  uint32_t GetCrashAddress();
+  uint32_t GetCrashReturnAddress();
 #else
   #define GJ_CHECK_ERROR(errCode)
 #endif

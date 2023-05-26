@@ -76,6 +76,8 @@ void TestReset()
       TEST_CASE_VALUE_BOOL("inv address, is an error reset", IsErrorReset(), true);
       TEST_CASE_VALUE_BOOL("inv address, soft reason fault", GetSoftResetReason() == SoftResetReason::HardFault, true);
       TEST_CASE_VALUE_BOOL("inv address, expected soft req", resetReason == NRF_POWER_RESETREAS_SREQ_MASK, true);
+      TEST_CASE_VALUE_INT32("inv address, crash address", GetCrashAddress(),  0x20010000, 0x20010000);
+      TEST_CASE_VALUE_BOOL("inv address, return crash address != 0", GetCrashReturnAddress() != 0, true);
       s_ResetPattern += 1;
       TestReboot();
     }
