@@ -58,12 +58,14 @@ void TestReset()
   else if ((s_ResetPattern & 0xffff0000) == RESET_PATTERN)
   {
     const uint32_t resetStep = s_ResetPattern & 0xffff;
+    s_ResetPattern += 1;
+
     if (resetStep == 0)
     {
       TEST_CASE_VALUE_BOOL("soft, not an error reset", IsErrorReset(), false);
       TEST_CASE_VALUE_BOOL("soft, soft reason reboot", GetSoftResetReason() == SoftResetReason::Reboot, true);
       TEST_CASE_VALUE_BOOL("soft, expected soft req", resetReason == NRF_POWER_RESETREAS_SREQ_MASK, true);
-      s_ResetPattern += 1;
+      
       SER("Triggering crash...\n\r");
       Delay(50);
 
@@ -73,20 +75,45 @@ void TestReset()
     }
     else if (resetStep == 1)
     {
-      TEST_CASE_VALUE_BOOL("inv address, is an error reset", IsErrorReset(), true);
-      TEST_CASE_VALUE_BOOL("inv address, soft reason fault", GetSoftResetReason() == SoftResetReason::HardFault, true);
-      TEST_CASE_VALUE_BOOL("inv address, expected soft req", resetReason == NRF_POWER_RESETREAS_SREQ_MASK, true);
-      TEST_CASE_VALUE_INT32("inv address, crash address", GetCrashAddress(),  0x20010000, 0x20010000);
-      TEST_CASE_VALUE_BOOL("inv address, return crash address != 0", GetCrashReturnAddress() != 0, true);
-      s_ResetPattern += 1;
-      TestReboot();
+      TEST_CASE_VALUE_BOOL("hard fault, is an error reset", IsErrorReset(), true);
+      TEST_CASE_VALUE_BOOL("hard fault, soft reason fault", GetSoftResetReason() == SoftResetReason::HardFault, true);
+      TEST_CASE_VALUE_BOOL("hard fault, expected soft req", resetReason == NRF_POWER_RESETREAS_SREQ_MASK, true);
+      TEST_CASE_VALUE_INT32("hard fault, crash address", GetCrashAddress(),  0x20010000, 0x20010000);
+      TEST_CASE_VALUE_BOOL("hard fault, return crash address != 0", GetCrashReturnAddress() != 0, true);
+
+      Delay(100);
+
+      GJ_CHECK_ERROR(NRF_ERROR_INVALID_PARAM);
     }
     else if (resetStep == 2)
+    {
+      TEST_CASE_VALUE_BOOL("app error, is an error reset", IsErrorReset(), true);
+      TEST_CASE_VALUE_BOOL("app error, soft reason fault", GetSoftResetReason() == SoftResetReason::AppError, true);
+      TEST_CASE_VALUE_BOOL("app error, expected soft req", resetReason == NRF_POWER_RESETREAS_SREQ_MASK, true);
+      TEST_CASE_VALUE_INT32("app error, crash address != 0", GetCrashAddress(),  1, 0x80000);
+      TEST_CASE_VALUE_INT32("app error, return crash address != 0", GetCrashReturnAddress(), 1, 0x80000);
+
+      Delay(100);
+
+      GJ_CHECK_ERROR_BOOL(false);
+    }
+    else if (resetStep == 3)
+    {
+      TEST_CASE_VALUE_BOOL("app error bool, is an error reset", IsErrorReset(), true);
+      TEST_CASE_VALUE_BOOL("app error bool, soft reason fault", GetSoftResetReason() == SoftResetReason::AppError, true);
+      TEST_CASE_VALUE_BOOL("app error bool, expected soft req", resetReason == NRF_POWER_RESETREAS_SREQ_MASK, true);
+      TEST_CASE_VALUE_INT32("app error bool, crash address != 0", GetCrashAddress(),  1, 0x80000);
+      TEST_CASE_VALUE_INT32("app error bool, return crash address != 0", GetCrashReturnAddress(), 1, 0x80000);
+
+      Delay(100);
+
+      TestReboot();
+    }
+    else if (resetStep == 4)
     {
       TEST_CASE_VALUE_BOOL("reboot, is not an error reset", IsErrorReset(), false);
       TEST_CASE_VALUE_BOOL("reboot, soft reason reboot", GetSoftResetReason() == SoftResetReason::Reboot, true);
       TEST_CASE_VALUE_BOOL("reboot, expected soft req", resetReason == NRF_POWER_RESETREAS_SREQ_MASK, true);
-      s_ResetPattern += 1;
     }
   }
 #endif

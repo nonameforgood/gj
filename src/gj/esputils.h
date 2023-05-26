@@ -16,7 +16,8 @@ enum class SoftResetReason
 {
   None,
   Reboot,
-  HardFault
+  HardFault,
+  AppError
 };
 
 SoftResetReason GetSoftResetReason();

@@ -395,6 +395,8 @@ static void SetSoftResetReason(SoftResetReason reason)
 
 #if defined(NRF)
 
+//these are not initialized on purpose,
+//they must retain their value after a crash reset
 GJ_PERSISTENT_NO_INIT static uint32_t s_crashAddress;
 GJ_PERSISTENT_NO_INIT static uint32_t s_crashReturnAddress;
 
@@ -422,6 +424,8 @@ void CallAppErrorFaultHandler(uint32_t errCode, uint32_t pc, uint32_t lr)
 {
   s_crashAddress = pc;
   s_crashReturnAddress = lr;
+
+  SetSoftResetReason(SoftResetReason::AppError);
 
   APP_ERROR_HANDLER(errCode);
 }
@@ -463,7 +467,7 @@ bool IsErrorReset()
                              NRF_POWER_RESETREAS_LOCKUP_MASK;
   const bool isResetError = (reason & errorMask) != 0;
   const bool isSoftResetError = (reason == NRF_POWER_RESETREAS_SREQ_MASK) && 
-                                GetSoftResetReason() == SoftResetReason::HardFault;
+                                ((GetSoftResetReason() == SoftResetReason::HardFault) || (GetSoftResetReason() == SoftResetReason::AppError));
   return isResetError || isSoftResetError;
 #endif
 }
