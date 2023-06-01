@@ -393,27 +393,21 @@ static void SetSoftResetReason(SoftResetReason reason)
   s_softResetReason = reason;
 }
 
+//this is not initialized on purpose,
+//It must retain its value after a crash reset
+GJ_PERSISTENT_NO_INIT static CrashData s_crashData;
+
+CrashData GetCrashData()
+{
+  return s_crashData;
+}
+
 #if defined(NRF)
-
-//these are not initialized on purpose,
-//they must retain their value after a crash reset
-GJ_PERSISTENT_NO_INIT static uint32_t s_crashAddress;
-GJ_PERSISTENT_NO_INIT static uint32_t s_crashReturnAddress;
-
-uint32_t GetCrashAddress()
-{
-  return s_crashAddress;
-}
-
-uint32_t GetCrashReturnAddress()
-{
-  return s_crashReturnAddress;
-}
 
 void HardFault_process(HardFault_stack_t * p_stack)
 {
-  s_crashAddress = p_stack->pc;
-  s_crashReturnAddress = p_stack->lr;
+  s_crashData.address = p_stack->pc;
+  s_crashData.returnAddress = p_stack->lr;
 
   SetSoftResetReason(SoftResetReason::HardFault);
   // Restart the system by default
@@ -422,8 +416,8 @@ void HardFault_process(HardFault_stack_t * p_stack)
 
 void CallAppErrorFaultHandler(uint32_t errCode, uint32_t pc, uint32_t lr)
 {
-  s_crashAddress = pc;
-  s_crashReturnAddress = lr;
+  s_crashData.address = pc;
+  s_crashData.returnAddress = lr;
 
   SetSoftResetReason(SoftResetReason::AppError);
 
@@ -432,7 +426,7 @@ void CallAppErrorFaultHandler(uint32_t errCode, uint32_t pc, uint32_t lr)
 
 void Command_CrashData(const char *command)
 {
-  SER("Last crash: pc=0x%x ret=0x%x\n\r", s_crashAddress, s_crashReturnAddress);
+  SER("Last crash: pc=0x%x ret=0x%x\n\r", s_crashData.address, s_crashData.returnAddress);
 }
 
 DEFINE_COMMAND_ARGS(crashdata, Command_CrashData);

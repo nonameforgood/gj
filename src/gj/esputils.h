@@ -70,6 +70,14 @@ void Reboot();
 
 void InitCrashDataCommand();
 
+struct CrashData
+{
+  uint32_t address;
+  uint32_t returnAddress;
+};
+
+CrashData GetCrashData();
+
 #ifdef NRF
 
 #define GJ_READ_PC(dest) \
@@ -127,8 +135,8 @@ void CallAppErrorFaultHandler(uint32_t errCode, uint32_t pc, uint32_t lr);
       }                                                     \
   } while (0)
 
-  uint32_t GetCrashAddress();
-  uint32_t GetCrashReturnAddress();
+  
 #else
   #define GJ_CHECK_ERROR(errCode)
+  #define GJ_CHECK_ERROR_BOOL(ret)
 #endif

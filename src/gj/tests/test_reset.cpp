@@ -122,8 +122,8 @@ void TestReset()
       TEST_CASE_VALUE_BOOL("hard fault, is an error reset", IsErrorReset(), true);
       TEST_CASE_VALUE_BOOL("hard fault, soft reason fault", GetSoftResetReason() == SoftResetReason::HardFault, true);
       TEST_CASE_VALUE_BOOL("hard fault, expected soft req", resetReason == NRF_POWER_RESETREAS_SREQ_MASK, true);
-      TEST_CASE_VALUE_INT32("hard fault, crash address", GetCrashAddress(),  0x20010000, 0x20010000);
-      TEST_CASE_VALUE_BOOL("hard fault, return crash address != 0", GetCrashReturnAddress() != 0, true);
+      TEST_CASE_VALUE_INT32("hard fault, crash address", GetCrashData().address,  0x20010000, 0x20010000);
+      TEST_CASE_VALUE_INT32("hard fault, return crash address != 0", GetCrashData().returnAddress, 1, 0x80000);
 
       CheckCrashDataCommand();
 
@@ -137,8 +137,8 @@ void TestReset()
       TEST_CASE_VALUE_BOOL("app error, is an error reset", IsErrorReset(), true);
       TEST_CASE_VALUE_BOOL("app error, soft reason fault", GetSoftResetReason() == SoftResetReason::AppError, true);
       TEST_CASE_VALUE_BOOL("app error, expected soft req", resetReason == NRF_POWER_RESETREAS_SREQ_MASK, true);
-      TEST_CASE_VALUE_INT32("app error, crash address != 0", GetCrashAddress(),  1, 0x80000);
-      TEST_CASE_VALUE_INT32("app error, return crash address != 0", GetCrashReturnAddress(), 1, 0x80000);
+      TEST_CASE_VALUE_INT32("app error, crash address != 0", GetCrashData().address,  1, 0x80000);
+      TEST_CASE_VALUE_INT32("app error, return crash address != 0", GetCrashData().returnAddress, 1, 0x80000);
 
       CheckCrashDataCommand();
       SER("Triggering app error bool...\n\r");
@@ -151,8 +151,8 @@ void TestReset()
       TEST_CASE_VALUE_BOOL("app error bool, is an error reset", IsErrorReset(), true);
       TEST_CASE_VALUE_BOOL("app error bool, soft reason fault", GetSoftResetReason() == SoftResetReason::AppError, true);
       TEST_CASE_VALUE_BOOL("app error bool, expected soft req", resetReason == NRF_POWER_RESETREAS_SREQ_MASK, true);
-      TEST_CASE_VALUE_INT32("app error bool, crash address != 0", GetCrashAddress(),  1, 0x80000);
-      TEST_CASE_VALUE_INT32("app error bool, return crash address != 0", GetCrashReturnAddress(), 1, 0x80000);
+      TEST_CASE_VALUE_INT32("app error bool, crash address != 0", GetCrashData().address,  1, 0x80000);
+      TEST_CASE_VALUE_INT32("app error bool, return crash address != 0", GetCrashData().returnAddress, 1, 0x80000);
 
       CheckCrashDataCommand();
       Delay(100);
