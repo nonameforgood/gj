@@ -100,27 +100,6 @@ const char *GetNrfEventString(uint32_t id)
   return "Unknown";
 }
 
-bool PrintOnError(uint32_t err)
-{
-  if (IsError(err)) 
-  { 
-    printf("ERROR:%s(0x%x)\n\r", ErrorToName(err), err); 
-    //printf
-    return true;
-  }
-  return false;
-}
-
-void ResetOnError(int32_t errCode)
-{
-  if (PrintOnError(errCode)) 
-  {
-    APP_ERROR_CHECK_BOOL(false);;
-  }
-}
-
-#define GJ_CHECK_ERROR(userErr) ResetOnError(userErr)
-
 DEFINE_CONFIG_INT32(ble.minint, ble_minint, 0);
 DEFINE_CONFIG_INT32(ble.fastadv, ble_fastadv, 150);         //fast adv interval, milliseconds
 DEFINE_CONFIG_INT32(ble.slowadv, ble_slowadv, 750);         //slow adv interval, milliseconds

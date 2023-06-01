@@ -16,7 +16,8 @@ enum class SoftResetReason
 {
   None,
   Reboot,
-  HardFault
+  HardFault,
+  AppError
 };
 
 SoftResetReason GetSoftResetReason();
@@ -66,3 +67,76 @@ void RegisterExitCallback(ExitCallback cb);
 
 bool CheckRTCMemoryVariable(void const *address, const char *name);
 void Reboot();
+
+void InitCrashDataCommand();
+
+struct CrashData
+{
+  uint32_t address;
+  uint32_t returnAddress;
+};
+
+CrashData GetCrashData();
+
+#ifdef NRF
+
+#define GJ_READ_PC(dest) \
+{ \
+  uint32_t _pcValue; \
+ \
+    __ASM volatile( \
+    "   .syntax unified                        \n" \
+    "   mov   %0, pc                           \n" \
+    "   .align                                 \n" \
+    :  "=r"(_pcValue)); \
+ \
+  (dest) = _pcValue; \
+}
+
+#define GJ_READ_LR(dest) \
+{ \
+  uint32_t _lrValue; \
+ \
+    __ASM volatile( \
+    "   .syntax unified                        \n" \
+    "   mov   %0, lr                           \n" \
+    "   .align                                 \n" \
+    :  "=r"(_lrValue)); \
+ \
+  (dest) = _lrValue; \
+}
+
+void CallAppErrorFaultHandler(uint32_t errCode, uint32_t pc, uint32_t lr);
+
+#define GJ_CHECK_ERROR(errCode) \
+  do                                                      \
+  {                                                       \
+      const uint32_t LOCAL_ERR_CODE = (errCode);         \
+      if (LOCAL_ERR_CODE != NRF_SUCCESS)                  \
+      {                                                   \
+          uint32_t pcValue;                               \
+          GJ_READ_PC(pcValue);                               \
+          uint32_t lrValue;                               \
+          GJ_READ_PC(lrValue);                               \
+          CallAppErrorFaultHandler(errCode, pcValue, lrValue);     \
+      }                                                   \
+  } while (0)
+#define GJ_CHECK_ERROR_BOOL(ret) \
+  do                                                      \
+  {                                                       \
+      const uint32_t LOCAL_BOOLEAN_VALUE = (ret); \
+      if (!LOCAL_BOOLEAN_VALUE)                             \
+      {                                                     \
+        uint32_t pcValue;                               \
+        GJ_READ_PC(pcValue);                               \
+        uint32_t lrValue;                               \
+        GJ_READ_PC(lrValue);                               \
+        CallAppErrorFaultHandler(0, pcValue, lrValue);     \
+      }                                                     \
+  } while (0)
+
+  
+#else
+  #define GJ_CHECK_ERROR(errCode)
+  #define GJ_CHECK_ERROR_BOOL(ret)
+#endif

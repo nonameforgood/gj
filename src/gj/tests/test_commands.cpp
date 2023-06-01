@@ -309,7 +309,7 @@ void TestCommands()
     #if defined(ESP32)
       const uint32_t maxCommandCount = 39;
     #elif defined(NRF)
-      const uint32_t maxCommandCount = 10;
+      const uint32_t maxCommandCount = 11;
     #endif
 
     TEST_CASE_VALUE_INT32("CommandIterator, command count", commandCount, maxCommandCount, maxCommandCount);

@@ -393,14 +393,57 @@ static void SetSoftResetReason(SoftResetReason reason)
   s_softResetReason = reason;
 }
 
+//this is not initialized on purpose,
+//It must retain its value after a crash reset
+GJ_PERSISTENT_NO_INIT static CrashData s_crashData;
+
+CrashData GetCrashData()
+{
+  return s_crashData;
+}
+
 #if defined(NRF)
+
 void HardFault_process(HardFault_stack_t * p_stack)
 {
+  s_crashData.address = p_stack->pc;
+  s_crashData.returnAddress = p_stack->lr;
+
   SetSoftResetReason(SoftResetReason::HardFault);
   // Restart the system by default
   NVIC_SystemReset();
 }
-#endif
+
+void CallAppErrorFaultHandler(uint32_t errCode, uint32_t pc, uint32_t lr)
+{
+  s_crashData.address = pc;
+  s_crashData.returnAddress = lr;
+
+  SetSoftResetReason(SoftResetReason::AppError);
+
+  APP_ERROR_HANDLER(errCode);
+}
+
+void Command_CrashData(const char *command)
+{
+  SER("Last crash: pc=0x%x ret=0x%x\n\r", s_crashData.address, s_crashData.returnAddress);
+}
+
+DEFINE_COMMAND_ARGS(crashdata, Command_CrashData);
+
+void InitCrashDataCommand()
+{
+  REFERENCE_COMMAND(crashdata);
+}
+
+#elif defined(ESP32)
+
+void InitCrashDataCommand()
+{
+  
+}
+
+#endif //defined(NRF)
 
 bool IsErrorReset()
 {
@@ -418,7 +461,7 @@ bool IsErrorReset()
                              NRF_POWER_RESETREAS_LOCKUP_MASK;
   const bool isResetError = (reason & errorMask) != 0;
   const bool isSoftResetError = (reason == NRF_POWER_RESETREAS_SREQ_MASK) && 
-                                GetSoftResetReason() == SoftResetReason::HardFault;
+                                ((GetSoftResetReason() == SoftResetReason::HardFault) || (GetSoftResetReason() == SoftResetReason::AppError));
   return isResetError || isSoftResetError;
 #endif
 }
