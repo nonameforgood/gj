@@ -24,6 +24,7 @@ void nrf_nvmc_page_erase(uint32_t address);
 }
 void __attribute__ ((noinline)) nrf_bootloader_app_start_impl2(uint32_t start_addr);
 
+static bool s_fsInit = false; 
 void fsCallback(fs_evt_t const * const evt, fs_ret_t result) { }
 
 //not using FS_REGISTER_CFG because it prevents dead var removal
@@ -38,44 +39,145 @@ GJ_FS_REGISTER_CFG(fs_config_t fsConfig) =
     .priority  = 0xFE            // Priority for flash usage.
 };
 
+
+/** @brief Function for filling a page in flash with a value.
+ *
+ * @param[in] address Address of the first word in the page to be filled.
+ * @param[in] value Value to be written to flash.
+ */
+static void flash_word_write(uint32_t * address, uint32_t value)
+{
+    // Turn on flash write enable and wait until the NVMC is ready:
+    NRF_NVMC->CONFIG = (NVMC_CONFIG_WEN_Wen << NVMC_CONFIG_WEN_Pos);
+
+    while (NRF_NVMC->READY == NVMC_READY_READY_Busy)
+    {
+        // Do nothing.
+    }
+
+    *address = value;
+
+    while (NRF_NVMC->READY == NVMC_READY_READY_Busy)
+    {
+        // Do nothing.
+    }
+
+    // Turn off flash write enable and wait until the NVMC is ready:
+    NRF_NVMC->CONFIG = (NVMC_CONFIG_WEN_Ren << NVMC_CONFIG_WEN_Pos);
+
+    while (NRF_NVMC->READY == NVMC_READY_READY_Busy)
+    {
+        // Do nothing.
+    }
+}
+
+static void flash_page_erase(uint32_t * page_address)
+{
+    // Turn on flash erase enable and wait until the NVMC is ready:
+    NRF_NVMC->CONFIG = (NVMC_CONFIG_WEN_Een << NVMC_CONFIG_WEN_Pos);
+
+    while (NRF_NVMC->READY == NVMC_READY_READY_Busy)
+    {
+        // Do nothing.
+    }
+
+    // Erase page:
+    NRF_NVMC->ERASEPAGE = (uint32_t)page_address;
+
+    while (NRF_NVMC->READY == NVMC_READY_READY_Busy)
+    {
+        // Do nothing.
+    }
+
+    // Turn off flash erase enable and wait until the NVMC is ready:
+    NRF_NVMC->CONFIG = (NVMC_CONFIG_WEN_Ren << NVMC_CONFIG_WEN_Pos);
+
+    while (NRF_NVMC->READY == NVMC_READY_READY_Busy)
+    {
+        // Do nothing.
+    }
+}
+
+
 void EraseSector(uint32_t byteOffset, uint32_t count)
 {
-  int32_t err_code;
-
-  err_code = fs_erase( 
-    &fsConfig,
-    (uint32_t*)byteOffset,
-    count,
-    nullptr
-  );
-
-  if (err_code != 0)
+  if (s_fsInit)
   {
-    SER("fs_erase (@0x%x) failed err=%d\n", byteOffset, err_code);
+    
+    int32_t err_code;
+
+    err_code = fs_erase( 
+      &fsConfig,
+      (uint32_t*)byteOffset,
+      count,
+      nullptr
+    );
+
+    if (err_code != 0)
+    {
+      SER("fs_erase (@0x%x) failed err=%d\n", byteOffset, err_code);
+    }
+  }
+  else
+  {
+    uint32_t pg_size = NRF_FICR->CODEPAGESIZE;
+
+    while(count)
+    {
+      flash_page_erase((uint32_t*)byteOffset);
+      count--;
+      byteOffset += pg_size;
+    }
   }
 }
 
+
 void WriteToSector(uint32_t byteOffset, const uint8_t *data, uint32_t size)
 {
-  int32_t err_code;
-
-  err_code = fs_store( 
-    &fsConfig,
-    (uint32_t*)byteOffset,
-    (uint32_t*)data,
-    size / 4,
-    nullptr
-  );
-
-  if (err_code != 0)
+  if (s_fsInit)
   {
-    SER("fs_store (@0x%x, %d) failed %s(%x)\n", byteOffset, size, ErrorToName(err_code), err_code);
+    int32_t err_code;
+
+    err_code = fs_store( 
+      &fsConfig,
+      (uint32_t*)byteOffset,
+      (uint32_t*)data,
+      size / 4,
+      nullptr
+    );
+
+    if (err_code != 0)
+    {
+      SER("fs_store (@0x%x, %d) failed %s(%x)\n", byteOffset, size, ErrorToName(err_code), err_code);
+    }
+  }
+  else
+  {
+    uint32_t *dstAddress = (uint32_t*)byteOffset;
+
+    size = (size & ~3);
+
+    const uint8_t *endData = data + size;
+
+    while(data < endData)
+    {
+      uint32_t word;
+
+      memcpy(&word, data, 4);
+
+      flash_word_write(dstAddress, word);
+      dstAddress++;
+      data += 4;
+    }
   }
 }
 
 bool IsFlashIdle()
 {
-  return fs_queue_is_empty();
+  if (s_fsInit)
+    return fs_queue_is_empty();
+  else
+    return true;
 }
 
 void sys_evt_dispatch(uint32_t sys_evt)
@@ -95,38 +197,44 @@ void sys_evt_dispatch(uint32_t sys_evt)
 
 void ExecuteSystemEvents()
 {
-  for (;;)
+  if (s_fsInit)
   {
-      uint32_t err_code;
-      uint32_t evt_id;
+    for (;;)
+    {
+        uint32_t err_code;
+        uint32_t evt_id;
 
-      // Pull event from SOC.
-      err_code = sd_evt_get(&evt_id);
+        // Pull event from SOC.
+        err_code = sd_evt_get(&evt_id);
 
-      if (err_code == NRF_ERROR_NOT_FOUND)
-      {
-          break;
-      }
-      else if (err_code != NRF_SUCCESS)
-      {
-          APP_ERROR_HANDLER(err_code);
-      }
-      else
-      {
-          // Call application's SOC event handler.
-#if (NRF_MODULE_ENABLED(CLOCK) && defined(SOFTDEVICE_PRESENT))
-          nrf_drv_clock_on_soc_event(evt_id);
-#endif
-        sys_evt_dispatch(evt_id);
-      }
+        if (err_code == NRF_ERROR_NOT_FOUND)
+        {
+            break;
+        }
+        else if (err_code != NRF_SUCCESS)
+        {
+            APP_ERROR_HANDLER(err_code);
+        }
+        else
+        {
+            // Call application's SOC event handler.
+  #if (NRF_MODULE_ENABLED(CLOCK) && defined(SOFTDEVICE_PRESENT))
+            nrf_drv_clock_on_soc_event(evt_id);
+  #endif
+          sys_evt_dispatch(evt_id);
+        }
+    }
   }
 }
 
 void FlushSectorWrite()
 {
-  while(!fs_queue_is_empty())
+  if (s_fsInit)
   {
-    ExecuteSystemEvents();
+    while(!fs_queue_is_empty())
+    {
+      ExecuteSystemEvents();
+    }
   }
 }
 
@@ -389,7 +497,7 @@ void InitSoftDevice(uint32_t centralLinks, uint32_t periphLinks)
 #endif
 }
 
-static bool s_fsInit = false; 
+
 
 
 void InitFStorage()
