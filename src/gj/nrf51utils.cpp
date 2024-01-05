@@ -24,6 +24,7 @@ void nrf_nvmc_page_erase(uint32_t address);
 }
 void __attribute__ ((noinline)) nrf_bootloader_app_start_impl2(uint32_t start_addr);
 
+#ifdef SOFTDEVICE_PRESENT
 static bool s_fsInit = false; 
 void fsCallback(fs_evt_t const * const evt, fs_ret_t result) { }
 
@@ -38,7 +39,7 @@ GJ_FS_REGISTER_CFG(fs_config_t fsConfig) =
     .num_pages = 1,      // Number of physical flash pages required.
     .priority  = 0xFE            // Priority for flash usage.
 };
-
+#endif
 
 /** @brief Function for filling a page in flash with a value.
  *
@@ -101,9 +102,9 @@ static void flash_page_erase(uint32_t * page_address)
 
 void EraseSector(uint32_t byteOffset, uint32_t count)
 {
+#ifdef SOFTDEVICE_PRESENT
   if (s_fsInit)
   {
-    
     int32_t err_code;
 
     err_code = fs_erase( 
@@ -119,6 +120,7 @@ void EraseSector(uint32_t byteOffset, uint32_t count)
     }
   }
   else
+#endif
   {
     uint32_t pg_size = NRF_FICR->CODEPAGESIZE;
 
@@ -134,6 +136,7 @@ void EraseSector(uint32_t byteOffset, uint32_t count)
 
 void WriteToSector(uint32_t byteOffset, const uint8_t *data, uint32_t size)
 {
+#ifdef SOFTDEVICE_PRESENT
   if (s_fsInit)
   {
     int32_t err_code;
@@ -152,6 +155,7 @@ void WriteToSector(uint32_t byteOffset, const uint8_t *data, uint32_t size)
     }
   }
   else
+#endif
   {
     uint32_t *dstAddress = (uint32_t*)byteOffset;
 
@@ -174,19 +178,22 @@ void WriteToSector(uint32_t byteOffset, const uint8_t *data, uint32_t size)
 
 bool IsFlashIdle()
 {
+#ifdef SOFTDEVICE_PRESENT
   if (s_fsInit)
     return fs_queue_is_empty();
   else
+#endif
     return true;
 }
 
 void sys_evt_dispatch(uint32_t sys_evt)
 {
 #if defined(NRF_SDK12)
+#ifdef SOFTDEVICE_PRESENT
     // Dispatch the system event to the fstorage module, where it will be
     // dispatched to the Flash Data Storage (FDS) module.
     fs_sys_event_handler(sys_evt);
-
+#endif
 
     // Dispatch to the Advertising module last, since it will check if there are any
     // pending flash operations in fstorage. Let fstorage process system events first,
@@ -195,8 +202,10 @@ void sys_evt_dispatch(uint32_t sys_evt)
 #endif
 }
 
+//this function is copied from intern_softdevice_events_execute()
 void ExecuteSystemEvents()
 {
+#ifdef SOFTDEVICE_PRESENT
   if (s_fsInit)
   {
     for (;;)
@@ -218,17 +227,19 @@ void ExecuteSystemEvents()
         else
         {
             // Call application's SOC event handler.
-  #if (NRF_MODULE_ENABLED(CLOCK) && defined(SOFTDEVICE_PRESENT))
+  #if NRF_MODULE_ENABLED(CLOCK)
             nrf_drv_clock_on_soc_event(evt_id);
   #endif
           sys_evt_dispatch(evt_id);
         }
     }
   }
+#endif
 }
 
 void FlushSectorWrite()
 {
+#ifdef SOFTDEVICE_PRESENT
   if (s_fsInit)
   {
     while(!fs_queue_is_empty())
@@ -236,6 +247,7 @@ void FlushSectorWrite()
       ExecuteSystemEvents();
     }
   }
+#endif
 }
 
 const BootSelPartition* GetBootSelPartition();
@@ -497,12 +509,10 @@ void InitSoftDevice(uint32_t centralLinks, uint32_t periphLinks)
 #endif
 }
 
-
-
-
 void InitFStorage()
 {
-  if (s_fsInit)
+#ifdef SOFTDEVICE_PRESENT
+  if (s_fsInit || !softdevice_handler_is_enabled())
     return;
 
   s_fsInit = true;
@@ -522,6 +532,7 @@ void InitFStorage()
   memcpy(&fsConfig, &fsConfig2, sizeof(fsConfig));
 
   fs_init();  
+#endif
 }
 
 void InitMultiboot()

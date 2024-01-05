@@ -136,15 +136,6 @@ private:
 #endif
 };
 
-struct FileSystemInit
-{
-  const char *appFolder = nullptr;
-
-#ifdef NRF
-  bool m_useSoftDevice = true;
-#endif
-};
-
 class FileSystem
 {
   public:
@@ -152,18 +143,16 @@ class FileSystem
   static uint32_t Capacity();
   static uint32_t Used();
 
-  static bool Init(const FileSystemInit &init);
+  static bool Init();
   static bool Exists(const char *path);
   static bool Delete(const char *path);
   static bool Rename(const char *oldName, const char *newName);
   static void ListDir(const char * dirname, uint8_t levels, std::function<void(File &, uint32_t)> cb);
 
 private:
-  static bool Init();
   static void ListDir(const char * dirname, uint8_t levels, uint32_t depth, std::function<void(File &, uint32_t)> cb);
 };
 
 void InitFileSystem(const char *appFolder);
-void InitFileSystem(const FileSystemInit &init);
 const char *GetAppFolder();
 void ShowFSInfo();

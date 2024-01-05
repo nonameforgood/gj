@@ -222,27 +222,15 @@ DEFINE_COMMAND_ARGS(fs,Command_fs);
 DEFINE_CONFIG_BOOL(file.dbg, file_dbg, false);
 DEFINE_CONFIG_BOOL(file.autoflush, file_autoflush, false);
 
-void InitFileSystem(const FileSystemInit &init)
+void InitFileSystem(const char *appFolder)
 {
 #ifdef ESP32
   SetAppFolder(init.appFolder);
 #endif
 
-  FileSystem::Init(init);
+  FileSystem::Init();
 
   REFERENCE_COMMAND(fs);
-}
-
-void InitFileSystem(const char *appFolder)
-{
-  FileSystemInit init;
-  init.appFolder = appFolder;
-
-#ifdef NRF
-  init.m_useSoftDevice = true;
-#endif
-
-InitFileSystem(init);
 }
 
 GJFile::GJFile() = default;
@@ -579,13 +567,6 @@ uint32_t FileSystem::Used()
 
 bool FileSystem::Init()
 {
-  const FileSystemInit init;
-
-  return Init(init);
-}
-
-bool FileSystem::Init(const FileSystemInit &init)
-{
 #if GJ_FILE_SPIFFS_IDF()
   
 #elif GJ_FILE_LITTLEFS() || GJ_FILE_SPIFFS()
@@ -620,7 +601,6 @@ bool FileSystem::Init(const FileSystemInit &init)
 
 #elif GJ_FILE_BLOCKFS()
 
-  if (init.m_useSoftDevice)
     InitFStorage();
 
 #endif
