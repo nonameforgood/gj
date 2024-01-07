@@ -154,13 +154,23 @@ bool IsSleepUlpWakeUp()
 #endif
 }
 
+bool ClearResetReason()
+{
+#if defined(NRF)
+  //this call will crash if called after the soft device is enabled
+  nrf_power_resetreas_clear(0xffffffff);  //clear register
+#endif
+
+  return true;
+}
+
 uint32_t GetResetReason()
 {
 #if defined(ESP32)
   return (uint32_t)esp_reset_reason();
 #elif defined(NRF)
   static const uint32_t reason = nrf_power_resetreas_get();
-  nrf_power_resetreas_clear(0xffffffff);  //clear register
+  static const bool reasonReset = ClearResetReason();
   return reason;
 #else
   return 0;

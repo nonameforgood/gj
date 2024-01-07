@@ -225,7 +225,7 @@ DEFINE_CONFIG_BOOL(file.autoflush, file_autoflush, false);
 void InitFileSystem(const char *appFolder)
 {
 #ifdef ESP32
-  SetAppFolder(init.appFolder);
+  SetAppFolder(appFolder);
 #endif
 
   FileSystem::Init();
@@ -601,7 +601,7 @@ bool FileSystem::Init()
 
 #elif GJ_FILE_BLOCKFS()
 
-    InitFStorage();
+  InitFStorage();
 
 #endif
 
