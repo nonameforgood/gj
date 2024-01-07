@@ -10,7 +10,7 @@ void TestAppendOnlyFile()
   //continues to run, crash, restart, run, crash, restart, and so on
   //This would reach the max FLASH erase count (10k) and 
   //destroy it, making the module useless.
-  bool doIt = false;
+  volatile bool doIt = false;
   if (doIt)
   {
     BEGIN_TEST(CumulFile)
